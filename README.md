@@ -11,7 +11,7 @@ The game itself is a first-person comedic physics-construction game about a monk
 ## The Team
 
 **Lead Design**: Will Satcher  
-**Producer**: Sophia Gonzalez  
+**Producer**: Sophia Gonzales  
 **Lead Programmer**: Julian Kroeger-Miller  
 **Lead Modeler**: Preston Ram  
 **3D Flex**: Justin Vang  
