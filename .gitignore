@@ -44,14 +44,30 @@
 SourceArt/**/*.png
 SourceArt/**/*.tga
 
-# Binary Files
+# Ignore all binaries by default
 Binaries/*
-Plugins/**/Binaries/*
-# Whitelist Compiled Binaries
-!Binaries/Win64/*.dll
-!Binaries/Win64/*.modules
-!Plugins/**/Binaries/Win64/*.dll
-!Plugins/**/Binaries/Win64/*.modules
+Plugins/*/Binaries/*
+
+# Allow the folder structure so Git can traverse into it
+!Binaries/*/
+!Plugins/*/Binaries/*/
+
+# Allow module descriptor files (CRITICAL: tells Unreal which DLLs to load)
+!Binaries/*/*.modules
+!Plugins/*/*/Binaries/*/*.modules
+
+# Allow Editor binaries for your platforms
+!Binaries/Win64/UnrealEditor*.dll
+!Plugins/*/Binaries/Win64/UnrealEditor*.dll
+!Binaries/Mac/UnrealEditor*.dylib
+!Plugins/*/Binaries/Mac/UnrealEditor*.dylib
+
+# Keep intermediate debug files and patches IGNORED
+Binaries/*/*.patch_*
+Binaries/*/*.pdb
+Plugins/*/Binaries/*/*.patch_*
+Plugins/*/Binaries/*/*.pdb
+
 
 # Builds
 Build/*
