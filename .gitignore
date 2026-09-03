@@ -52,7 +52,7 @@ Plugins/*/Binaries/*
 !Binaries/*/
 !Plugins/*/Binaries/*/
 
-# Allow module descriptor files (CRITICAL: tells Unreal which DLLs to load)
+# Allow module descriptor files
 !Binaries/*/*.modules
 !Plugins/*/*/Binaries/*/*.modules
 
@@ -67,7 +67,6 @@ Binaries/*/*.patch_*
 Binaries/*/*.pdb
 Plugins/*/Binaries/*/*.patch_*
 Plugins/*/Binaries/*/*.pdb
-
 
 # Builds
 Build/*
