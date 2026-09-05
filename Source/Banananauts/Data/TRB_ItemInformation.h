@@ -6,10 +6,10 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "ItemInformation.generated.h"
+#include "TRB_ItemInformation.generated.h"
 
 USTRUCT(BlueprintType)
-struct FItemInformation : public FTableRowBase
+struct FTRB_ItemInformation : public FTableRowBase
 {
 	GENERATED_BODY()
 
