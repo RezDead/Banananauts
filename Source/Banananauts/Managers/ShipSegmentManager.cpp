@@ -93,15 +93,21 @@ void UShipSegmentManager::ModifyMass(float Delta)
  */
 void UShipSegmentManager::ModifyFuel(float Delta)
 {
-	Fuel += Delta;
-	
-	if (Fuel > MaxFuel)
+	if (Fuel + Delta > MaxFuel)
 	{
 		Fuel = MaxFuel;
 	}
-	else if (Fuel < 0)
+	else if (Fuel + Delta < 0)
 	{
+		if (Fuel != 0)
+		{
+			OnFuelEmpty.Broadcast();
+		}
 		Fuel = 0;
+	}
+	else
+	{
+		Fuel += Delta;
 	}
 }
 
@@ -112,14 +118,24 @@ void UShipSegmentManager::ModifyFuel(float Delta)
  */
 void UShipSegmentManager::ModifyBananas(int Delta)
 {
-	Bananas += Delta;
-	
-	if (Bananas > MaxBananas)
+	if (Bananas + Delta > MaxBananas)
 	{
 		Bananas = MaxBananas;
 	}
-	else if (Bananas < 0)
+	else if (Bananas + Delta < 0)
 	{
+		if (Bananas != 0)
+		{
+			OnBananasEmpty.Broadcast(true);
+		}
 		Bananas = 0;
+	}
+	else
+	{
+		if (Bananas == 0)
+		{
+			OnBananasEmpty.Broadcast(false);
+		}
+		Bananas += Delta;
 	}
 }

@@ -7,9 +7,9 @@
 #include "UObject/Object.h"
 #include "ShipSegmentManager.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHeatStatusChanged, EBurnStatus, NewStatus)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFuelEmpty)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBananasEmpty, bool, Empty)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHeatStatusChanged, EBurnStatus, NewStatus);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFuelEmpty);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBananasEmpty, bool, Empty);
 
 /**
  * Manages stats and the state of the ship segments.
@@ -24,8 +24,12 @@ public:
 	void ModifyTotalHeat(float Delta);
 	UFUNCTION(BlueprintCallable)
 	void ModifyMaxTotalHeat(float Delta);
-	
-	UFUNCTION(BlueprintListenable)
+
+	/**
+	 * Event that broadcasts when heat status changes.
+	 * @param NewStatus The new status of heat.
+	 */
+	UPROPERTY(BlueprintAssignable)
 	FOnHeatStatusChanged OnHeatStatusChanged;
 	
 	UFUNCTION(BlueprintCallable)
@@ -36,9 +40,24 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void ModifyFuel(float Delta);
+
+	/**
+	 * Event that is broadcasted when fuel is empty.
+	 */
+	UPROPERTY(BlueprintAssignable)
+	FFuelEmpty OnFuelEmpty;
 	
 	UFUNCTION(BlueprintCallable)
 	void ModifyBananas(int Delta);
+	
+	/**
+	 * Event that is broadcasted when banana empty status changes.
+	 * @param Empty True if empty. False if not.
+	 */
+	UPROPERTY(BlueprintAssignable)
+	FBananasEmpty OnBananasEmpty;
+
+
 	
 private:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Heat", meta = (AllowPrivateAccess = "true"))
