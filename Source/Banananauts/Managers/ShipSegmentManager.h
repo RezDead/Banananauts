@@ -57,7 +57,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FBananasEmpty OnBananasEmpty;
 
-
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Fuel")
+	bool bHasFuel = false;
 	
 private:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Heat", meta = (AllowPrivateAccess = "true"))
@@ -69,21 +70,21 @@ private:
 	
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Heat Ablation", meta = (AllowPrivateAccess = "true"))
 	float HeatAblation = 0.0f;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Heat Ablation", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Heat Ablation", meta = (AllowPrivateAccess = "true"))
 	float MaxHeatAblation = 0.0f;
 	
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Mass", meta = (AllowPrivateAccess = "true"))
 	float Mass = 0.0f;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Mass", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Mass", meta = (AllowPrivateAccess = "true"))
 	float MaxMass = 0.0f;
 	
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Fuel", meta = (AllowPrivateAccess = "true"))
 	float Fuel = 0.0f;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Fuel", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Fuel", meta = (AllowPrivateAccess = "true"))
 	float MaxFuel = 0.0f;
 	
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Bananas", meta = (AllowPrivateAccess = "true"))
 	int Bananas = 0;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Bananas", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Bananas", meta = (AllowPrivateAccess = "true"))
 	int MaxBananas = 0;
 };

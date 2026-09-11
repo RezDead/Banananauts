@@ -93,6 +93,11 @@ void UShipSegmentManager::ModifyMass(float Delta)
  */
 void UShipSegmentManager::ModifyFuel(float Delta)
 {
+	if (!bHasFuel)
+	{
+		return;
+	}
+	
 	if (Fuel + Delta > MaxFuel)
 	{
 		Fuel = MaxFuel;
