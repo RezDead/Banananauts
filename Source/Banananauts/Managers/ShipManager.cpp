@@ -18,16 +18,25 @@ void AShipManager::BeginPlay()
 	InitiateFlight();
 }
 
+/**
+ * Initiates the flight of the ship and all in-flight systems.
+ */
 void AShipManager::InitiateFlight()
 {
 	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, TickRate, true);
 }
 
+/**
+ * Ticks all systems on the ship.
+ */
 void AShipManager::TickSystems()
 {
 	UpdateHeat();
 }
 
+/**
+ * Updates the heat of all segments on the ship.
+ */
 void AShipManager::UpdateHeat() const
 {
 	float NoseHeatMult = CalculateHeatMult(Nose);
@@ -40,6 +49,12 @@ void AShipManager::UpdateHeat() const
 	Tail->ModifyHeat(BaseHeatGain * TailHeatMult);
 }
 
+/**
+ * Calculates the heat multiplier for a given ship segment.
+ * 
+ * @param Segment The ship segment to calculate the heat multiplier for.
+ * @return The heat multiplier for the given ship segment.
+ */
 float AShipManager::CalculateHeatMult(UShipSegmentManager* Segment)
 {
 	if (Segment->GetMaxHeatAblation() == 0.0f) return .5f;
