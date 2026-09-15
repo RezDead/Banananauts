@@ -21,6 +21,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Management")
 	void InitiateFlight();
 	
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+	float GetShipMass();
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+	float GetMaxShipMass();
+	
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+	int GetBananaCount();
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+	int GetBananaCapacity();
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+	bool UseBananas(int Amount);
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+	bool AddBananas(int Amount);
+	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Instanced, Category = "Segments")
 	TObjectPtr<UShipSegmentManager> Nose;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Instanced, Category = "Segments")
@@ -42,5 +56,7 @@ private:
 	
 	void UpdateHeat() const;
 	static float CalculateHeatMult(UShipSegmentManager* Segment);
+	static int RemoveBananaHelper(int Amount, UShipSegmentManager* Segment);
+	static int AddBananaHelper(int Amount, UShipSegmentManager* Segment);
 	
 };

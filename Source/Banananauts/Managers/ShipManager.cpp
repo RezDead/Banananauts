@@ -27,6 +27,130 @@ void AShipManager::InitiateFlight()
 }
 
 /**
+ * Calculates the mass of the ship.
+ * 
+ * @return The mass of the ship.
+ */
+float AShipManager::GetShipMass()
+{
+	return Nose->GetMass() + Body->GetMass() + Tail->GetMass();
+}
+
+/**
+ * Calculates the maximum mass of the ship.
+ * 
+ * @return The maximum mass of the ship.
+ */
+float AShipManager::GetMaxShipMass()
+{
+	return Nose->GetMaxMass() + Body->GetMaxMass() + Tail->GetMaxMass();
+}
+
+/**
+ * Calculates the number of bananas on the ship.
+ * 
+ * @return The number of bananas on the ship.
+ */
+int AShipManager::GetBananaCount()
+{
+	return Nose->GetBananas() + Body->GetBananas() + Tail->GetBananas();
+}
+
+/**
+ * Calculates the maximum number of bananas the ship can hold.
+ * 
+ * @return The maximum number of bananas the ship can hold.
+ */
+int AShipManager::GetBananaCapacity()
+{
+	return Nose->GetMaxBananas() + Body->GetMaxBananas() + Tail->GetMaxBananas();
+}
+
+/**
+ * Uses the specified number of bananas from the ship.
+ * 
+ * @param Amount The number of bananas to use. Must be greater than 0.
+ * @return True if the operation was successful, false otherwise.
+ */
+bool AShipManager::UseBananas(int Amount)
+{
+	if (Amount <= 0) {return false;}
+	if (GetBananaCount() < Amount) {return false;}
+	
+	Amount = RemoveBananaHelper(Amount, Body);
+	if (Amount <= 0) {return true;}
+	Amount = RemoveBananaHelper(Amount, Nose);
+	if (Amount <= 0) {return true;}
+	Amount = RemoveBananaHelper(Amount, Tail);
+	if (Amount <= 0) {return true;}
+	
+	//Error occurred, check logic
+	return false;
+}
+
+/**
+ * Removes the specified number of bananas from the given segment.
+ * 
+ * @param Amount The number of bananas to remove.
+ * @param Segment The segment from which to remove bananas.
+ * @return The remaining number of bananas to remove.
+ */
+int AShipManager::RemoveBananaHelper(int Amount, UShipSegmentManager* Segment)
+{
+	int Num = Segment->GetBananas();
+	
+	if (Num < Amount)
+	{
+		Segment->ModifyBananas(-Num);
+		return Amount - Num;
+	}
+
+	Segment->ModifyBananas(-Amount);
+	return 0;
+}
+
+/**
+ * Adds the specified number of bananas to the ship.
+ * 
+ * @param Amount The number of bananas to add. Must be greater than 0.
+ * @return True if any bananas were added, false if already at capacity or invalid input.
+ */
+bool AShipManager::AddBananas(int Amount)
+{
+	if (Amount <= 0) {return false;}
+	if (GetBananaCount() == GetBananaCapacity()){return false;}
+	
+	Amount = AddBananaHelper(Amount, Body);
+	if (Amount <= 0) {return true;}
+	Amount = AddBananaHelper(Amount, Nose);
+	if (Amount <= 0) {return true;}
+	AddBananaHelper(Amount, Tail);
+	
+	return true;
+}
+
+/**
+ * Adds the specified number of bananas to the given segment.
+ * 
+ * @param Amount The number of bananas to add.
+ * @param Segment The segment to add bananas to.
+ * @return The remaining number of bananas to add.
+ */
+int AShipManager::AddBananaHelper(int Amount, UShipSegmentManager* Segment)
+{
+	int Num = Segment->GetMaxBananas() - Segment->GetBananas();
+	
+	if (Num < Amount)
+	{
+		Segment->ModifyBananas(Num);
+		return Amount - Num;
+	}
+	
+	Segment->ModifyBananas(Amount);
+	return 0;
+}
+
+/**
  * Ticks all systems on the ship.
  */
 void AShipManager::TickSystems()
