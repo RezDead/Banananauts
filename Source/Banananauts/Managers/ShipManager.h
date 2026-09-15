@@ -8,7 +8,10 @@
 #include "ShipManager.generated.h"
 
 /**
+ * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
+ * Last Edited: 9/15/2026
+ * Author: Julian Kroeger-Miller
  */
 UCLASS()
 class BANANANAUTS_API AShipManager : public AActor
@@ -54,9 +57,8 @@ private:
 	void TickSystems();
 	FTimerHandle TickHandle;
 	
-	void UpdateHeat() const;
-	static float CalculateHeatMult(UShipSegmentManager* Segment);
-	static int RemoveBananaHelper(int Amount, UShipSegmentManager* Segment);
-	static int AddBananaHelper(int Amount, UShipSegmentManager* Segment);
+	UPROPERTY()
+	TArray<UShipSegmentManager*> Segments;
 	
+	void UpdateHeat() const;
 };

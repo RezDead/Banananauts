@@ -3,6 +3,8 @@
 
 #include "ShipManager.h"
 
+#include "Banananauts/Utilities/ShipStatsUtility.h"
+
 AShipManager::AShipManager()
 {
 	TickRate = 5.0f;
@@ -10,6 +12,8 @@ AShipManager::AShipManager()
 	Nose = CreateDefaultSubobject<UShipSegmentManager>(TEXT("NoseSegment"));
 	Body = CreateDefaultSubobject<UShipSegmentManager>(TEXT("BodySegment"));
 	Tail = CreateDefaultSubobject<UShipSegmentManager>(TEXT("TailSegment"));
+	
+	Segments.Add(Nose); Segments.Add(Body); Segments.Add(Tail);
 }
 
 void AShipManager::BeginPlay()
@@ -33,7 +37,7 @@ void AShipManager::InitiateFlight()
  */
 float AShipManager::GetShipMass()
 {
-	return Nose->GetMass() + Body->GetMass() + Tail->GetMass();
+	return UShipStatsUtility::GetShipMass(Segments);
 }
 
 /**
@@ -43,7 +47,7 @@ float AShipManager::GetShipMass()
  */
 float AShipManager::GetMaxShipMass()
 {
-	return Nose->GetMaxMass() + Body->GetMaxMass() + Tail->GetMaxMass();
+	return UShipStatsUtility::GetMaxShipMass(Segments);
 }
 
 /**
@@ -53,7 +57,7 @@ float AShipManager::GetMaxShipMass()
  */
 int AShipManager::GetBananaCount()
 {
-	return Nose->GetBananas() + Body->GetBananas() + Tail->GetBananas();
+	return UShipStatsUtility::GetBananaCount(Segments);
 }
 
 /**
@@ -63,7 +67,7 @@ int AShipManager::GetBananaCount()
  */
 int AShipManager::GetBananaCapacity()
 {
-	return Nose->GetMaxBananas() + Body->GetMaxBananas() + Tail->GetMaxBananas();
+	return UShipStatsUtility::GetBananaCapacity(Segments);
 }
 
 /**
@@ -74,39 +78,7 @@ int AShipManager::GetBananaCapacity()
  */
 bool AShipManager::UseBananas(int Amount)
 {
-	if (Amount <= 0) {return false;}
-	if (GetBananaCount() < Amount) {return false;}
-	
-	Amount = RemoveBananaHelper(Amount, Body);
-	if (Amount <= 0) {return true;}
-	Amount = RemoveBananaHelper(Amount, Nose);
-	if (Amount <= 0) {return true;}
-	Amount = RemoveBananaHelper(Amount, Tail);
-	if (Amount <= 0) {return true;}
-	
-	//Error occurred, check logic
-	return false;
-}
-
-/**
- * Removes the specified number of bananas from the given segment.
- * 
- * @param Amount The number of bananas to remove.
- * @param Segment The segment from which to remove bananas.
- * @return The remaining number of bananas to remove.
- */
-int AShipManager::RemoveBananaHelper(int Amount, UShipSegmentManager* Segment)
-{
-	int Num = Segment->GetBananas();
-	
-	if (Num < Amount)
-	{
-		Segment->ModifyBananas(-Num);
-		return Amount - Num;
-	}
-
-	Segment->ModifyBananas(-Amount);
-	return 0;
+	return UShipStatsUtility::UseBananas(Amount, Segments);
 }
 
 /**
@@ -117,37 +89,7 @@ int AShipManager::RemoveBananaHelper(int Amount, UShipSegmentManager* Segment)
  */
 bool AShipManager::AddBananas(int Amount)
 {
-	if (Amount <= 0) {return false;}
-	if (GetBananaCount() == GetBananaCapacity()){return false;}
-	
-	Amount = AddBananaHelper(Amount, Body);
-	if (Amount <= 0) {return true;}
-	Amount = AddBananaHelper(Amount, Nose);
-	if (Amount <= 0) {return true;}
-	AddBananaHelper(Amount, Tail);
-	
-	return true;
-}
-
-/**
- * Adds the specified number of bananas to the given segment.
- * 
- * @param Amount The number of bananas to add.
- * @param Segment The segment to add bananas to.
- * @return The remaining number of bananas to add.
- */
-int AShipManager::AddBananaHelper(int Amount, UShipSegmentManager* Segment)
-{
-	int Num = Segment->GetMaxBananas() - Segment->GetBananas();
-	
-	if (Num < Amount)
-	{
-		Segment->ModifyBananas(Num);
-		return Amount - Num;
-	}
-	
-	Segment->ModifyBananas(Amount);
-	return 0;
+	return UShipStatsUtility::AddBananas(Amount, Segments);
 }
 
 /**
@@ -163,36 +105,12 @@ void AShipManager::TickSystems()
  */
 void AShipManager::UpdateHeat() const
 {
-	float NoseHeatMult = CalculateHeatMult(Nose);
+	float NoseHeatMult = UShipStatsUtility::CalculateHeatMult(Nose);
 	Nose->ModifyHeat(BaseHeatGain * NoseHeatMult);
 	
-	float BodyHeatMult = CalculateHeatMult(Body);
+	float BodyHeatMult = UShipStatsUtility::CalculateHeatMult(Body);
 	Body->ModifyHeat(BaseHeatGain * BodyHeatMult);
 	
-	float TailHeatMult = CalculateHeatMult(Tail);
+	float TailHeatMult = UShipStatsUtility::CalculateHeatMult(Tail);
 	Tail->ModifyHeat(BaseHeatGain * TailHeatMult);
-}
-
-/**
- * Calculates the heat multiplier for a given ship segment.
- * 
- * @param Segment The ship segment to calculate the heat multiplier for.
- * @return The heat multiplier for the given ship segment.
- */
-float AShipManager::CalculateHeatMult(UShipSegmentManager* Segment)
-{
-	if (Segment->GetMaxHeatAblation() == 0.0f) return .5f;
-
-	const float HeatAblationPercent = Segment->GetHeatAblation() / Segment->GetMaxHeatAblation();
-	
-	//If less than 50% heat ablation
-	if (HeatAblationPercent <= 0.5f)
-	{
-		// Mult by two to accomodate for lerp range
-		return FMath::Lerp(2.0f, 1.0f, HeatAblationPercent * 2.0f);
-	}
-	
-	// -0.5f because we want to remove the 0-50% range and just calculate the 50-100% range, *2 to compensate for loss
-	return FMath::Lerp(1.0f, 0.5f, (HeatAblationPercent - 0.5f) * 2.0f);
-	
 }
