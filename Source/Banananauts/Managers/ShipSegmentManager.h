@@ -20,10 +20,12 @@ class BANANANAUTS_API UShipSegmentManager : public UObject
 	GENERATED_BODY()
 	
 public:
+	UShipSegmentManager();
+	
 	UFUNCTION(BlueprintCallable)
-	void ModifyTotalHeat(float Delta);
+	void ModifyHeat(float Delta);
 	UFUNCTION(BlueprintCallable)
-	void ModifyMaxTotalHeat(float Delta);
+	void ModifyMaxHeat(float Delta);
 
 	/**
 	 * Event that broadcasts when heat status changes.
@@ -60,11 +62,34 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Fuel")
 	bool bHasFuel = false;
 	
+	UFUNCTION(Category = "Heat")
+	float GetHeat() const { return Heat; }
+	UFUNCTION(Category = "Heat")
+	float GetMaxHeat() const { return MaxHeat; }
+	UFUNCTION(Category = "Heat")
+	EBurnStatus GetBurnStatus() const { return BurnStatus; }
+	UFUNCTION(Category = "Heat Ablation")
+	float GetHeatAblation() const { return HeatAblation; }
+	UFUNCTION(Category = "Heat Ablation")
+	float GetMaxHeatAblation() const { return MaxHeatAblation; }
+	UFUNCTION(Category = "Mass")
+	float GetMass() const { return Mass; }
+	UFUNCTION(Category = "Mass")
+	float GetMaxMass() const { return MaxMass; }
+	UFUNCTION(Category = "Fuel")
+	float GetFuel() const { return Fuel; }
+	UFUNCTION(Category = "Fuel")
+	float GetMaxFuel() const { return MaxFuel; }
+	UFUNCTION(Category = "Bananas")
+	float GetBananas() const { return Bananas; }
+	UFUNCTION(Category = "Bananas")
+	float GetMaxBananas() const { return MaxBananas; }
+	
 private:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Heat", meta = (AllowPrivateAccess = "true"))
-	float TotalHeat = 0.0f;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Heat", meta = (AllowPrivateAccess = "true"))
-	float MaxTotalHeat = 0.0f;
+	float Heat = 0.0f;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Heat", meta = (AllowPrivateAccess = "true"))
+	float MaxHeat = 0.0f;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Heat", meta = (AllowPrivateAccess = "true"))
 	EBurnStatus BurnStatus;
 	

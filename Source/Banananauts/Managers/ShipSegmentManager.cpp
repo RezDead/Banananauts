@@ -3,35 +3,40 @@
 
 #include "ShipSegmentManager.h"
 
-/**
- * Modifies the current total heat of the ship part and updates burn status as needed.
- * 
- * @param Delta Value to modify the current total heat by. Can be positive or negative.
- */
-void UShipSegmentManager::ModifyTotalHeat(float Delta)
+UShipSegmentManager::UShipSegmentManager()
 {
-	TotalHeat += Delta;
+	BurnStatus = EBurnStatus::Optimal;
+}
+
+/**
+ * Modifies the current heat of the ship segment and updates burn status as needed.
+ * 
+ * @param Delta Value to modify the current heat by. Can be positive or negative.
+ */
+void UShipSegmentManager::ModifyHeat(float Delta)
+{
+	Heat += Delta;
 	
-	if (TotalHeat > MaxTotalHeat)
+	if (Heat > MaxHeat)
 	{
-		TotalHeat = MaxTotalHeat;
+		Heat = MaxHeat;
 	}
-	else if (TotalHeat < 0)
+	else if (Heat < 0)
 	{
-		TotalHeat = 0;
+		Heat = 0;
 	}
 	
-	if ( TotalHeat/MaxTotalHeat > .99 && BurnStatus != EBurnStatus::Explosive)
+	if ( Heat/MaxHeat > .99 && BurnStatus != EBurnStatus::Explosive)
 	{
 		BurnStatus = EBurnStatus::Explosive;
 		OnHeatStatusChanged.Broadcast(BurnStatus);
 	}
-	else if ( TotalHeat/MaxTotalHeat > .66 && BurnStatus != EBurnStatus::Burning)
+	else if ( Heat/MaxHeat > .66 && BurnStatus != EBurnStatus::Burning)
 	{
 		BurnStatus = EBurnStatus::Burning;
 		OnHeatStatusChanged.Broadcast(BurnStatus);
 	}
-	else if ( TotalHeat/MaxTotalHeat > .33 && BurnStatus != EBurnStatus::Overheating)
+	else if ( Heat/MaxHeat > .33 && BurnStatus != EBurnStatus::Overheating)
 	{
 		BurnStatus = EBurnStatus::Overheating;
 		OnHeatStatusChanged.Broadcast(BurnStatus);
@@ -44,13 +49,13 @@ void UShipSegmentManager::ModifyTotalHeat(float Delta)
 }
 
 /**
- * Modifies the maximum total heat of the ship part.
+ * Modifies the maximum heat of the ship segment.
  * 
- * @param Delta Value to modify the maximum total heat by. Can be positive or negative.
+ * @param Delta Value to modify the maximum heat by. Can be positive or negative.
  */
-void UShipSegmentManager::ModifyMaxTotalHeat(float Delta)
+void UShipSegmentManager::ModifyMaxHeat(float Delta)
 {
-	MaxTotalHeat += Delta;
+	MaxHeat += Delta;
 }
 
 void UShipSegmentManager::ModifyHeatAblation(float Delta)
@@ -68,7 +73,7 @@ void UShipSegmentManager::ModifyHeatAblation(float Delta)
 }
 
 /**
- * Modifies the mass of the ship part.
+ * Modifies the mass of the ship segment.
  * 
  * @param Delta Value to modify the mass by. Can be positive or negative.
  */
@@ -87,7 +92,7 @@ void UShipSegmentManager::ModifyMass(float Delta)
 }
 
 /**
- * Modifies the fuel of the ship part.
+ * Modifies the fuel of the ship segment.
  * 
  * @param Delta Value to modify the fuel by. Can be positive or negative.
  */
@@ -117,7 +122,7 @@ void UShipSegmentManager::ModifyFuel(float Delta)
 }
 
 /**
- * Modifies the number of bananas on the ship part.
+ * Modifies the number of bananas on the ship segment.
  * 
  * @param Delta Value to modify the number of bananas by. Can be positive or negative.
  */
