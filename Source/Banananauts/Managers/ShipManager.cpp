@@ -92,6 +92,26 @@ bool AShipManager::AddBananas(int Amount)
 	return UShipStatsUtility::AddBananas(Amount, Segments);
 }
 
+void AShipManager::ModifyFuel(float Delta)
+{
+	if (Fuel + Delta > MaxFuel)
+	{
+		Fuel = MaxFuel;
+	}
+	else if (Fuel + Delta < 0)
+	{
+		if (Fuel != 0)
+		{
+			OnFuelEmpty.Broadcast();
+		}
+		Fuel = 0;
+	}
+	else
+	{
+		Fuel += Delta;
+	}
+}
+
 /**
  * Ticks all systems on the ship.
  */

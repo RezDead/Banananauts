@@ -92,36 +92,6 @@ void UShipSegmentManager::ModifyMass(float Delta)
 }
 
 /**
- * Modifies the fuel of the ship segment.
- * 
- * @param Delta Value to modify the fuel by. Can be positive or negative.
- */
-void UShipSegmentManager::ModifyFuel(float Delta)
-{
-	if (!bHasFuel)
-	{
-		return;
-	}
-	
-	if (Fuel + Delta > MaxFuel)
-	{
-		Fuel = MaxFuel;
-	}
-	else if (Fuel + Delta < 0)
-	{
-		if (Fuel != 0)
-		{
-			OnFuelEmpty.Broadcast();
-		}
-		Fuel = 0;
-	}
-	else
-	{
-		Fuel += Delta;
-	}
-}
-
-/**
  * Modifies the number of bananas on the ship segment.
  * 
  * @param Delta Value to modify the number of bananas by. Can be positive or negative.

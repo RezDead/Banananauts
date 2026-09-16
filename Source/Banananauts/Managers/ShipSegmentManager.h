@@ -8,11 +8,13 @@
 #include "ShipSegmentManager.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHeatStatusChanged, EBurnStatus, NewStatus);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFuelEmpty);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBananasEmpty, bool, Empty);
 
 /**
  * Manages stats and the state of the ship segments.
+ * 
+ * Last Edited: 9/15/2026
+ * Author: Julian Kroeger-Miller
  */
 UCLASS()
 class BANANANAUTS_API UShipSegmentManager : public UObject
@@ -41,15 +43,6 @@ public:
 	void ModifyMass(float Delta);
 	
 	UFUNCTION(BlueprintCallable)
-	void ModifyFuel(float Delta);
-
-	/**
-	 * Event that is broadcasted when fuel is empty.
-	 */
-	UPROPERTY(BlueprintAssignable)
-	FFuelEmpty OnFuelEmpty;
-	
-	UFUNCTION(BlueprintCallable)
 	void ModifyBananas(int Delta);
 	
 	/**
@@ -58,9 +51,6 @@ public:
 	 */
 	UPROPERTY(BlueprintAssignable)
 	FBananasEmpty OnBananasEmpty;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Fuel")
-	bool bHasFuel = false;
 	
 	UFUNCTION(Category = "Heat")
 	float GetHeat() const { return Heat; }
@@ -76,10 +66,6 @@ public:
 	float GetMass() const { return Mass; }
 	UFUNCTION(Category = "Mass")
 	float GetMaxMass() const { return MaxMass; }
-	UFUNCTION(Category = "Fuel")
-	float GetFuel() const { return Fuel; }
-	UFUNCTION(Category = "Fuel")
-	float GetMaxFuel() const { return MaxFuel; }
 	UFUNCTION(Category = "Bananas")
 	float GetBananas() const { return Bananas; }
 	UFUNCTION(Category = "Bananas")
@@ -102,11 +88,6 @@ private:
 	float Mass = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Mass", meta = (AllowPrivateAccess = "true"))
 	float MaxMass = 0.0f;
-	
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Fuel", meta = (AllowPrivateAccess = "true"))
-	float Fuel = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Fuel", meta = (AllowPrivateAccess = "true"))
-	float MaxFuel = 0.0f;
 	
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Bananas", meta = (AllowPrivateAccess = "true"))
 	int Bananas = 0;
