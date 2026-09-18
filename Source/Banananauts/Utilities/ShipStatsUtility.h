@@ -10,7 +10,7 @@
 /**
  * Utility class for calculating ship stats/data and certain functions.
  * 
- * Last Edited: 9/15/2026
+ * Last Edited: 9/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -19,11 +19,6 @@ class BANANANAUTS_API UShipStatsUtility : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 	
 public:
-	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static float GetShipMass(const TArray<AShipSegmentManager*>& Segments);
-	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static float GetMaxShipMass(const TArray<AShipSegmentManager*>& Segments);
-	
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
 	static int GetBananaCount(const TArray<AShipSegmentManager*>& Segments);
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")

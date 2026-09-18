@@ -5,7 +5,6 @@
 
 AShipSegmentManager::AShipSegmentManager()
 {
-	PrimaryActorTick.bCanEverTick = false;
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	Attributes = CreateDefaultSubobject<UShipSegmentAttributes>(TEXT("Segment Attributes"));
 	MaxHeat = 0.0f;

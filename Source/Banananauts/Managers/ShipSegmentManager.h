@@ -19,7 +19,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBananasEmpty, bool, Empty);
  * Last Edited: 9/17/2026
  * Author: Julian Kroeger-Miller
  */
-UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+UCLASS(PrioritizeCategories="Default")
 class BANANANAUTS_API AShipSegmentManager : public AActor, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
@@ -40,12 +40,12 @@ protected:
 private:
 	void InitAttributes() const;
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Heat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	float MaxHeat = 0.0f;
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Heat Ablation", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	float MaxHeatAblation = 0.0f;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Bananas", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	int MaxBananas = 0;
 };
