@@ -9,10 +9,10 @@
  * @param Segments Array of ship segments.
  * @return Total mass of the ship.
  */
-float UShipStatsUtility::GetShipMass(const TArray<UShipSegmentManager*>& Segments)
+float UShipStatsUtility::GetShipMass(const TArray<AShipSegmentManager*>& Segments)
 {
 	float Total = 0;
-	for (const UShipSegmentManager* Segment : Segments)
+	for (const AShipSegmentManager* Segment : Segments)
 	{
 		Total += Segment->GetMass();
 	}
@@ -25,10 +25,10 @@ float UShipStatsUtility::GetShipMass(const TArray<UShipSegmentManager*>& Segment
  * @param Segments Array of ship segments.
  * @return Maximum mass of the ship.
  */
-float UShipStatsUtility::GetMaxShipMass(const TArray<UShipSegmentManager*>& Segments)
+float UShipStatsUtility::GetMaxShipMass(const TArray<AShipSegmentManager*>& Segments)
 {
 	float Total = 0;
-	for (const UShipSegmentManager* Segment : Segments)
+	for (const AShipSegmentManager* Segment : Segments)
 	{
 		Total += Segment->GetMaxMass();
 	}
@@ -41,10 +41,10 @@ float UShipStatsUtility::GetMaxShipMass(const TArray<UShipSegmentManager*>& Segm
  * @param Segments Array of ship segments.
  * @return Total count of bananas on the ship.
  */
-int UShipStatsUtility::GetBananaCount(const TArray<UShipSegmentManager*>& Segments)
+int UShipStatsUtility::GetBananaCount(const TArray<AShipSegmentManager*>& Segments)
 {
 	int Total = 0;
-	for (const UShipSegmentManager* Segment : Segments)
+	for (const AShipSegmentManager* Segment : Segments)
 	{
 		Total += Segment->GetBananas();
 	}
@@ -57,10 +57,10 @@ int UShipStatsUtility::GetBananaCount(const TArray<UShipSegmentManager*>& Segmen
  * @param Segments Array of ship segments.
  * @return Total capacity of bananas on the ship.
  */
-float UShipStatsUtility::GetBananaCapacity(const TArray<UShipSegmentManager*>& Segments)
+float UShipStatsUtility::GetBananaCapacity(const TArray<AShipSegmentManager*>& Segments)
 {
 	float Total = 0;
-	for (const UShipSegmentManager* Segment : Segments)
+	for (const AShipSegmentManager* Segment : Segments)
 	{
 		Total += Segment->GetMaxBananas();
 	}
@@ -74,7 +74,7 @@ float UShipStatsUtility::GetBananaCapacity(const TArray<UShipSegmentManager*>& S
  * @param Segments Array of ship segments.
  * @return True if the operation was successful, false if bananas are insufficient or invalid amount.
  */
-bool UShipStatsUtility::UseBananas(int& Amount, const TArray<UShipSegmentManager*>& Segments)
+bool UShipStatsUtility::UseBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments)
 {
 	if (Amount <= 0) {return false;}
 	if (GetBananaCount(Segments) < Amount){return false;}
@@ -95,7 +95,7 @@ bool UShipStatsUtility::UseBananas(int& Amount, const TArray<UShipSegmentManager
  * @param Segments Array of ship segments.
  * @return True if the operation was successful, false if bananas are full or invalid amount added.
  */
-bool UShipStatsUtility::AddBananas(int& Amount, const TArray<UShipSegmentManager*>& Segments)
+bool UShipStatsUtility::AddBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments)
 {
 	if (Amount <= 0) {return false;}
 	if (GetBananaCount(Segments) >= GetBananaCapacity(Segments)){return false;}
@@ -116,7 +116,7 @@ bool UShipStatsUtility::AddBananas(int& Amount, const TArray<UShipSegmentManager
  * @param Segment Array of ship segments.
  * @return True if all remaining bananas were removed, false otherwise.
  */
-bool UShipStatsUtility::RemoveBananaHelper(int& Amount, UShipSegmentManager* Segment)
+bool UShipStatsUtility::RemoveBananaHelper(int& Amount, AShipSegmentManager* Segment)
 {
 	int Num = Segment->GetBananas();
 	
@@ -138,7 +138,7 @@ bool UShipStatsUtility::RemoveBananaHelper(int& Amount, UShipSegmentManager* Seg
  * @param Segment Array of ship segments.
  * @return True if all remaining bananas were added, false otherwise.
  */
-bool UShipStatsUtility::AddBananaHelper(int& Amount, UShipSegmentManager* Segment)
+bool UShipStatsUtility::AddBananaHelper(int& Amount, AShipSegmentManager* Segment)
 {
 	int Num = Segment->GetMaxBananas() - Segment->GetBananas();
 	
@@ -159,7 +159,7 @@ bool UShipStatsUtility::AddBananaHelper(int& Amount, UShipSegmentManager* Segmen
 * @param Segment The ship segment to calculate the heat multiplier for.
 * @return The heat multiplier for the given ship segment.
 */
-float UShipStatsUtility::CalculateHeatMult(const UShipSegmentManager* Segment)
+float UShipStatsUtility::CalculateHeatMult(const AShipSegmentManager* Segment)
 {
 	if (Segment->GetMaxHeatAblation() == 0.0f) return .5f;
 

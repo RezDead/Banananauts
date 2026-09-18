@@ -53,11 +53,11 @@ public:
 	float GetMaxFuel() const { return MaxFuel; }
 	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Instanced, Category = "Segments")
-	TObjectPtr<UShipSegmentManager> Nose;
+	TObjectPtr<AShipSegmentManager> Nose;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Instanced, Category = "Segments")
-	TObjectPtr<UShipSegmentManager> Body;
+	TObjectPtr<AShipSegmentManager> Body;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Instanced, Category = "Segments")
-	TObjectPtr<UShipSegmentManager> Tail;
+	TObjectPtr<AShipSegmentManager> Tail;
 	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Management")
 	float TickRate;
@@ -77,7 +77,7 @@ private:
 	FTimerHandle TickHandle;
 	
 	UPROPERTY()
-	TArray<UShipSegmentManager*> Segments;
+	TArray<AShipSegmentManager*> Segments;
 	
 	void UpdateHeat() const;
 };

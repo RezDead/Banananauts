@@ -9,9 +9,9 @@ AShipManager::AShipManager()
 {
 	TickRate = 5.0f;
 	BaseHeatGain = 1.0f;
-	Nose = CreateDefaultSubobject<UShipSegmentManager>(TEXT("NoseSegment"));
-	Body = CreateDefaultSubobject<UShipSegmentManager>(TEXT("BodySegment"));
-	Tail = CreateDefaultSubobject<UShipSegmentManager>(TEXT("TailSegment"));
+	Nose = CreateDefaultSubobject<AShipSegmentManager>(TEXT("NoseSegment"));
+	Body = CreateDefaultSubobject<AShipSegmentManager>(TEXT("BodySegment"));
+	Tail = CreateDefaultSubobject<AShipSegmentManager>(TEXT("TailSegment"));
 	
 	Segments.Add(Nose); Segments.Add(Body); Segments.Add(Tail);
 }
