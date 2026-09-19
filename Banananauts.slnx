@@ -204,6 +204,9 @@
     </Project>
   </Folder>
   <Folder Name="/Rules/">
+    <Project Path="../../../../../Program Files/Epic Games/UE_5.8/Engine/Intermediate/Build/BuildRulesProjects/MarketplaceRules/MarketplaceRules.csproj">
+      <BuildType Project="Development" />
+    </Project>
     <Project Path="../../../../../Program Files/Epic Games/UE_5.8/Engine/Intermediate/Build/BuildRulesProjects/UE5ProgramRules/UE5ProgramRules.csproj">
       <BuildType Project="Development" />
     </Project>
