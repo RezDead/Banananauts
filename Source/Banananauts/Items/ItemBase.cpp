@@ -2,11 +2,13 @@
 
 
 #include "ItemBase.h"
+#include "AbilitySystemComponent.h"
 
 
 AItemBase::AItemBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 }
 
 // Called when the game starts or when spawned
