@@ -10,7 +10,7 @@
 /**
  * Utility class for calculating ship stats/data and certain functions.
  * 
- * Last Edited: 9/15/2026
+ * Last Edited: 9/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -20,23 +20,18 @@ class BANANANAUTS_API UShipStatsUtility : public UBlueprintFunctionLibrary
 	
 public:
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static float GetShipMass(const TArray<UShipSegmentManager*>& Segments);
+	static int GetBananaCount(const TArray<AShipSegmentManager*>& Segments);
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static float GetMaxShipMass(const TArray<UShipSegmentManager*>& Segments);
+	static float GetBananaCapacity(const TArray<AShipSegmentManager*>& Segments);
+	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
+	static bool UseBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments);
+	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
+	static bool AddBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments);
 	
-	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static int GetBananaCount(const TArray<UShipSegmentManager*>& Segments);
-	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static float GetBananaCapacity(const TArray<UShipSegmentManager*>& Segments);
-	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static bool UseBananas(int& Amount, const TArray<UShipSegmentManager*>& Segments);
-	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static bool AddBananas(int& Amount, const TArray<UShipSegmentManager*>& Segments);
-	
-	static float CalculateHeatMult(const UShipSegmentManager* Segment);
+	static float CalculateHeatMult(const AShipSegmentManager* Segment);
 	
 private:
-	static bool RemoveBananaHelper(int& Amount, UShipSegmentManager* Segment);
-	static bool AddBananaHelper(int& Amount, UShipSegmentManager* Segment);
+	static bool RemoveBananaHelper(int& Amount, AShipSegmentManager* Segment);
+	static bool AddBananaHelper(int& Amount, AShipSegmentManager* Segment);
 	
 };

@@ -3,37 +3,8 @@
 
 #include "ShipStatsUtility.h"
 
-/**
- * Get total ship mass by summing the mass of all ship segments.
- * 
- * @param Segments Array of ship segments.
- * @return Total mass of the ship.
- */
-float UShipStatsUtility::GetShipMass(const TArray<UShipSegmentManager*>& Segments)
-{
-	float Total = 0;
-	for (const UShipSegmentManager* Segment : Segments)
-	{
-		Total += Segment->GetMass();
-	}
-	return Total;
-}
+#include "Banananauts/GAS/Effects/EModifyBananas.h"
 
-/**
- * Get maximum ship mass by summing the maximum mass of all ship segments.
- * 
- * @param Segments Array of ship segments.
- * @return Maximum mass of the ship.
- */
-float UShipStatsUtility::GetMaxShipMass(const TArray<UShipSegmentManager*>& Segments)
-{
-	float Total = 0;
-	for (const UShipSegmentManager* Segment : Segments)
-	{
-		Total += Segment->GetMaxMass();
-	}
-	return Total;
-}
 
 /**
  * Get the total count of all bananas on the ship.
@@ -41,12 +12,12 @@ float UShipStatsUtility::GetMaxShipMass(const TArray<UShipSegmentManager*>& Segm
  * @param Segments Array of ship segments.
  * @return Total count of bananas on the ship.
  */
-int UShipStatsUtility::GetBananaCount(const TArray<UShipSegmentManager*>& Segments)
+int UShipStatsUtility::GetBananaCount(const TArray<AShipSegmentManager*>& Segments)
 {
 	int Total = 0;
-	for (const UShipSegmentManager* Segment : Segments)
+	for (const AShipSegmentManager* Segment : Segments)
 	{
-		Total += Segment->GetBananas();
+		Total += Segment->GetAbilitySystemComponent()->GetNumericAttribute(UShipSegmentAttributes::GetBananasAttribute());
 	}
 	return Total;
 }
@@ -57,12 +28,12 @@ int UShipStatsUtility::GetBananaCount(const TArray<UShipSegmentManager*>& Segmen
  * @param Segments Array of ship segments.
  * @return Total capacity of bananas on the ship.
  */
-float UShipStatsUtility::GetBananaCapacity(const TArray<UShipSegmentManager*>& Segments)
+float UShipStatsUtility::GetBananaCapacity(const TArray<AShipSegmentManager*>& Segments)
 {
 	float Total = 0;
-	for (const UShipSegmentManager* Segment : Segments)
+	for (const AShipSegmentManager* Segment : Segments)
 	{
-		Total += Segment->GetMaxBananas();
+		Total += Segment->GetAbilitySystemComponent()->GetNumericAttribute(UShipSegmentAttributes::GetMaxBananasAttribute());
 	}
 	return Total;
 }
@@ -74,7 +45,7 @@ float UShipStatsUtility::GetBananaCapacity(const TArray<UShipSegmentManager*>& S
  * @param Segments Array of ship segments.
  * @return True if the operation was successful, false if bananas are insufficient or invalid amount.
  */
-bool UShipStatsUtility::UseBananas(int& Amount, const TArray<UShipSegmentManager*>& Segments)
+bool UShipStatsUtility::UseBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments)
 {
 	if (Amount <= 0) {return false;}
 	if (GetBananaCount(Segments) < Amount){return false;}
@@ -95,7 +66,7 @@ bool UShipStatsUtility::UseBananas(int& Amount, const TArray<UShipSegmentManager
  * @param Segments Array of ship segments.
  * @return True if the operation was successful, false if bananas are full or invalid amount added.
  */
-bool UShipStatsUtility::AddBananas(int& Amount, const TArray<UShipSegmentManager*>& Segments)
+bool UShipStatsUtility::AddBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments)
 {
 	if (Amount <= 0) {return false;}
 	if (GetBananaCount(Segments) >= GetBananaCapacity(Segments)){return false;}
@@ -114,20 +85,32 @@ bool UShipStatsUtility::AddBananas(int& Amount, const TArray<UShipSegmentManager
  * 
  * @param Amount Number of bananas remaining to remove.
  * @param Segment Array of ship segments.
- * @return True if all remaining bananas were removed, false otherwise.
+ * @return True if all remaining bananas were removed, false if not or the ability system component is invalid.
  */
-bool UShipStatsUtility::RemoveBananaHelper(int& Amount, UShipSegmentManager* Segment)
+bool UShipStatsUtility::RemoveBananaHelper(int& Amount, AShipSegmentManager* Segment)
 {
-	int Num = Segment->GetBananas();
+	UAbilitySystemComponent* ASC = Segment->GetAbilitySystemComponent();
+	if (!ASC) {return false;}
+
+	const int Num = ASC->GetNumericAttribute(UShipSegmentAttributes::GetBananasAttribute());
+
+	const FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
+	FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(
+		UEModifyBananas::StaticClass(),
+		1.0f,
+		ContextHandle
+	);
 	
 	if (Num < Amount)
 	{
-		Segment->ModifyBananas(-Num);
+		SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Data.Magnitude")), -Num);
+		ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 		Amount -= Num;
 		return false;
 	}
 
-	Segment->ModifyBananas(-Amount);
+	SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Data.Magnitude")), -Amount);
+	ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	return true;
 }
 
@@ -136,20 +119,33 @@ bool UShipStatsUtility::RemoveBananaHelper(int& Amount, UShipSegmentManager* Seg
  * 
  * @param Amount Number of bananas remaining to add.
  * @param Segment Array of ship segments.
- * @return True if all remaining bananas were added, false otherwise.
+ * @return True if all remaining bananas were added, false if not or the ability system component is invalid.
  */
-bool UShipStatsUtility::AddBananaHelper(int& Amount, UShipSegmentManager* Segment)
+bool UShipStatsUtility::AddBananaHelper(int& Amount, AShipSegmentManager* Segment)
 {
-	int Num = Segment->GetMaxBananas() - Segment->GetBananas();
+	UAbilitySystemComponent* ASC = Segment->GetAbilitySystemComponent();
+	if (!ASC) {return false;}
+	
+	//Max Bananas - Bananas
+	int Num = ASC->GetNumericAttribute(UShipSegmentAttributes::GetMaxBananasAttribute()) - ASC->GetNumericAttribute(UShipSegmentAttributes::GetBananasAttribute());
+	
+	const FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
+	FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(
+		UEModifyBananas::StaticClass(),
+		1.0f,
+		ContextHandle
+	);
 	
 	if (Num < Amount)
 	{
-		Segment->ModifyBananas(Num);
+		SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Data.Magnitude")), Num);
+		ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 		Amount -= Num;
 		return false;
 	}
 	
-	Segment->ModifyBananas(Amount);
+	SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Data.Magnitude")), Amount);
+	ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	return true;
 }
 
@@ -157,13 +153,16 @@ bool UShipStatsUtility::AddBananaHelper(int& Amount, UShipSegmentManager* Segmen
 * Calculates the heat multiplier for a given ship segment.
 * 
 * @param Segment The ship segment to calculate the heat multiplier for.
-* @return The heat multiplier for the given ship segment.
+* @return The heat multiplier for the given ship segment, 0 if ASC is null.
 */
-float UShipStatsUtility::CalculateHeatMult(const UShipSegmentManager* Segment)
+float UShipStatsUtility::CalculateHeatMult(const AShipSegmentManager* Segment)
 {
-	if (Segment->GetMaxHeatAblation() == 0.0f) return .5f;
+	UAbilitySystemComponent* ASC = Segment->GetAbilitySystemComponent();
+	if (!ASC) {return 0;}
+	
+	if (ASC->GetNumericAttribute(UShipSegmentAttributes::GetMaxHeatAblationAttribute()) == 0.0f) return .5f;
 
-	const float HeatAblationPercent = Segment->GetHeatAblation() / Segment->GetMaxHeatAblation();
+	const float HeatAblationPercent = ASC->GetNumericAttribute(UShipSegmentAttributes::GetHeatAblationAttribute()) / ASC->GetNumericAttribute(UShipSegmentAttributes::GetMaxHeatAblationAttribute());
 
 	//If less than 50% heat ablation
 	if (HeatAblationPercent <= 0.5f)

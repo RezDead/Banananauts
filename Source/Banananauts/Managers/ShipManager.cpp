@@ -3,23 +3,69 @@
 
 #include "ShipManager.h"
 
+#include "Banananauts/GAS/Effects/EModifyHeat.h"
 #include "Banananauts/Utilities/ShipStatsUtility.h"
 
 AShipManager::AShipManager()
 {
-	TickRate = 5.0f;
-	BaseHeatGain = 1.0f;
-	Nose = CreateDefaultSubobject<UShipSegmentManager>(TEXT("NoseSegment"));
-	Body = CreateDefaultSubobject<UShipSegmentManager>(TEXT("BodySegment"));
-	Tail = CreateDefaultSubobject<UShipSegmentManager>(TEXT("TailSegment"));
+	SystemTickRate = 5.0f;
+	BaseHeatGainPerTick = 1.0f;
 	
-	Segments.Add(Nose); Segments.Add(Body); Segments.Add(Tail);
+	MaxMass = 0.0f;
+	MaxFuel = 0.0f;
+		
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	Attributes = CreateDefaultSubobject<UShipAttributes>(TEXT("ShipAttributes"));
+
+	NoseSegmentComponent = CreateDefaultSubobject<UChildActorComponent>(TEXT("NoseSegment"));
+	BodySegmentComponent = CreateDefaultSubobject<UChildActorComponent>(TEXT("BodySegment"));
+	TailSegmentComponent = CreateDefaultSubobject<UChildActorComponent>(TEXT("TailSegment"));
+
+	NoseSegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
+	BodySegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
+	TailSegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
 }
 
 void AShipManager::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	InitSegments();
+	
+	if (AbilitySystemComponent)
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	
+	InitAttributes();
+	
 	InitiateFlight();
+}
+
+/**
+ * Initializes ship segments. Throws fatal error if any of the segments are not initialized.
+ */
+void AShipManager::InitSegments()
+{
+	Nose = NoseSegmentComponent ? Cast<AShipSegmentManager>(NoseSegmentComponent->GetChildActor()) : nullptr;
+	Body = BodySegmentComponent ? Cast<AShipSegmentManager>(BodySegmentComponent->GetChildActor()) : nullptr;
+	Tail = TailSegmentComponent ? Cast<AShipSegmentManager>(TailSegmentComponent->GetChildActor()) : nullptr;
+	
+	if (!Nose || !Body || !Tail)
+	{
+		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to initialize ship segments. Make sure these are spawned in and attached to the ship via editor."));
+	}
+	
+	Segments.Add(Nose); Segments.Add(Body); Segments.Add(Tail);
+}
+
+/**
+ * Initializes attributes to default values.
+ */
+void AShipManager::InitAttributes() const
+{
+	Attributes->InitMass(0.0f);
+	Attributes->InitMaxMass(MaxMass);
+	Attributes->InitFuel(0.0f);
+	Attributes->InitMaxFuel(MaxFuel);
 }
 
 /**
@@ -27,27 +73,7 @@ void AShipManager::BeginPlay()
  */
 void AShipManager::InitiateFlight()
 {
-	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, TickRate, true);
-}
-
-/**
- * Calculates the mass of the ship.
- * 
- * @return The mass of the ship.
- */
-float AShipManager::GetShipMass()
-{
-	return UShipStatsUtility::GetShipMass(Segments);
-}
-
-/**
- * Calculates the maximum mass of the ship.
- * 
- * @return The maximum mass of the ship.
- */
-float AShipManager::GetMaxShipMass()
-{
-	return UShipStatsUtility::GetMaxShipMass(Segments);
+	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
 }
 
 /**
@@ -92,26 +118,6 @@ bool AShipManager::AddBananas(int Amount)
 	return UShipStatsUtility::AddBananas(Amount, Segments);
 }
 
-void AShipManager::ModifyFuel(float Delta)
-{
-	if (Fuel + Delta > MaxFuel)
-	{
-		Fuel = MaxFuel;
-	}
-	else if (Fuel + Delta < 0)
-	{
-		if (Fuel != 0)
-		{
-			OnFuelEmpty.Broadcast();
-		}
-		Fuel = 0;
-	}
-	else
-	{
-		Fuel += Delta;
-	}
-}
-
 /**
  * Ticks all systems on the ship.
  */
@@ -125,12 +131,31 @@ void AShipManager::TickSystems()
  */
 void AShipManager::UpdateHeat() const
 {
-	float NoseHeatMult = UShipStatsUtility::CalculateHeatMult(Nose);
-	Nose->ModifyHeat(BaseHeatGain * NoseHeatMult);
-	
-	float BodyHeatMult = UShipStatsUtility::CalculateHeatMult(Body);
-	Body->ModifyHeat(BaseHeatGain * BodyHeatMult);
-	
-	float TailHeatMult = UShipStatsUtility::CalculateHeatMult(Tail);
-	Tail->ModifyHeat(BaseHeatGain * TailHeatMult);
+	for (const auto Segment : Segments)
+	{
+		UAbilitySystemComponent* ASC = Segment->GetAbilitySystemComponent();
+		if (!ASC)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Segment has no ASC"));
+			continue;
+		}
+		const float HeatMult = UShipStatsUtility::CalculateHeatMult(Segment);
+		
+		const FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
+		FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(
+			UEModifyHeat::StaticClass(),
+			1.0f,
+			ContextHandle
+		);
+		
+		const FGameplayTag MagTag = FGameplayTag::RequestGameplayTag(FName("Data.Magnitude"));
+		if (!MagTag.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Invalid magnitude tag"));
+			continue;
+		}
+		
+		SpecHandle.Data.Get()->SetSetByCallerMagnitude(MagTag, BaseHeatGainPerTick * HeatMult);
+		ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+	}
 }

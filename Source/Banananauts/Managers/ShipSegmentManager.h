@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "Banananauts/Enums/BurnStatus.h"
+#include "Banananauts/GAS/Attributes/ShipSegmentAttributes.h"
 #include "UObject/Object.h"
 #include "ShipSegmentManager.generated.h"
 
@@ -11,86 +13,39 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHeatStatusChanged, EBurnStatus, N
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBananasEmpty, bool, Empty);
 
 /**
- * Manages stats and the state of the ship segments.
+ * Holds the attributes and ASC that handles the state of the ship segments.
+ * All data handling is handled by the attribute class.
  * 
- * Last Edited: 9/15/2026
+ * Last Edited: 9/17/2026
  * Author: Julian Kroeger-Miller
  */
-UCLASS()
-class BANANANAUTS_API UShipSegmentManager : public UObject
+UCLASS(PrioritizeCategories="Default")
+class BANANANAUTS_API AShipSegmentManager : public AActor, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 	
 public:
-	UShipSegmentManager();
+	AShipSegmentManager();
 	
-	UFUNCTION(BlueprintCallable)
-	void ModifyHeat(float Delta);
-	UFUNCTION(BlueprintCallable)
-	void ModifyMaxHeat(float Delta);
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
+	UAbilitySystemComponent* AbilitySystemComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
+	UShipSegmentAttributes* Attributes;
+	
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
+	
+protected:
+	virtual void BeginPlay() override;
 
-	/**
-	 * Event that broadcasts when heat status changes.
-	 * @param NewStatus The new status of heat.
-	 */
-	UPROPERTY(BlueprintAssignable)
-	FOnHeatStatusChanged OnHeatStatusChanged;
-	
-	UFUNCTION(BlueprintCallable)
-	void ModifyHeatAblation(float Delta);
-	
-	UFUNCTION(BlueprintCallable)
-	void ModifyMass(float Delta);
-	
-	UFUNCTION(BlueprintCallable)
-	void ModifyBananas(int Delta);
-	
-	/**
-	 * Event that is broadcasted when banana empty status changes.
-	 * @param Empty True if empty. False if not.
-	 */
-	UPROPERTY(BlueprintAssignable)
-	FBananasEmpty OnBananasEmpty;
-	
-	UFUNCTION(Category = "Heat")
-	float GetHeat() const { return Heat; }
-	UFUNCTION(Category = "Heat")
-	float GetMaxHeat() const { return MaxHeat; }
-	UFUNCTION(Category = "Heat")
-	EBurnStatus GetBurnStatus() const { return BurnStatus; }
-	UFUNCTION(Category = "Heat Ablation")
-	float GetHeatAblation() const { return HeatAblation; }
-	UFUNCTION(Category = "Heat Ablation")
-	float GetMaxHeatAblation() const { return MaxHeatAblation; }
-	UFUNCTION(Category = "Mass")
-	float GetMass() const { return Mass; }
-	UFUNCTION(Category = "Mass")
-	float GetMaxMass() const { return MaxMass; }
-	UFUNCTION(Category = "Bananas")
-	float GetBananas() const { return Bananas; }
-	UFUNCTION(Category = "Bananas")
-	float GetMaxBananas() const { return MaxBananas; }
-	
 private:
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Heat", meta = (AllowPrivateAccess = "true"))
-	float Heat = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Heat", meta = (AllowPrivateAccess = "true"))
+	void InitAttributes() const;
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	float MaxHeat = 0.0f;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Heat", meta = (AllowPrivateAccess = "true"))
-	EBurnStatus BurnStatus;
 	
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Heat Ablation", meta = (AllowPrivateAccess = "true"))
-	float HeatAblation = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Heat Ablation", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	float MaxHeatAblation = 0.0f;
-	
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Mass", meta = (AllowPrivateAccess = "true"))
-	float Mass = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Mass", meta = (AllowPrivateAccess = "true"))
-	float MaxMass = 0.0f;
-	
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Bananas", meta = (AllowPrivateAccess = "true"))
-	int Bananas = 0;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Bananas", meta = (AllowPrivateAccess = "true"))
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	int MaxBananas = 0;
 };

@@ -3,81 +3,81 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/ChildActorComponent.h"
 #include "ShipSegmentManager.h"
+#include "Banananauts/GAS/Attributes/ShipAttributes.h"
 #include "UObject/Object.h"
 #include "ShipManager.generated.h"
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFuelEmpty);
 
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 9/15/2026
+ * Last Edited: 9/17/2026
  * Author: Julian Kroeger-Miller
  */
-UCLASS()
-class BANANANAUTS_API AShipManager : public AActor
+UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
+class BANANANAUTS_API AShipManager : public AActor, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 	
 public:
 	AShipManager();
 	
-	UFUNCTION(BlueprintCallable, Category = "Management")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
+	UAbilitySystemComponent* AbilitySystemComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
+	UShipAttributes* Attributes;
+	
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
+	
+	UFUNCTION(BlueprintCallable, Category = "Default|Management")
 	void InitiateFlight();
 	
-	UFUNCTION(BlueprintCallable, Category = "Stats|Mass")
-	float GetShipMass();
-	UFUNCTION(BlueprintCallable, Category = "Stats|Mass")
-	float GetMaxShipMass();
-	
-	UFUNCTION(BlueprintCallable, Category = "Stats|Bananas")
+	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	int GetBananaCount();
-	UFUNCTION(BlueprintCallable, Category = "Stats|Bananas")
+	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	int GetBananaCapacity();
-	UFUNCTION(BlueprintCallable, Category = "Stats|Bananas")
+	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	bool UseBananas(int Amount);
-	UFUNCTION(BlueprintCallable, Category = "Stats|Bananas")
+	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	bool AddBananas(int Amount);
 	
-	/**
-	 * Event that is broadcasted when fuel is empty.
-	 */
-	UPROPERTY(BlueprintAssignable, Category = "Stats|Fuel")
-	FFuelEmpty OnFuelEmpty;
-	UFUNCTION(BlueprintCallable, Category = "Stats|Fuel")
-	void ModifyFuel(float Delta);
-	UFUNCTION(Category = "Stats|Fuel")
-	float GetFuel() const { return Fuel; }
-	UFUNCTION(Category = "Stats|Fuel")
-	float GetMaxFuel() const { return MaxFuel; }
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default|Segments")
+	TObjectPtr<UChildActorComponent> NoseSegmentComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default|Segments")
+	TObjectPtr<UChildActorComponent> BodySegmentComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default|Segments")
+	TObjectPtr<UChildActorComponent> TailSegmentComponent;
+
+	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = "Default|Segments")
+	TObjectPtr<AShipSegmentManager> Nose;
+	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = "Default|Segments")
+	TObjectPtr<AShipSegmentManager> Body;
+	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = "Default|Segments")
+	TObjectPtr<AShipSegmentManager> Tail;
 	
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Instanced, Category = "Segments")
-	TObjectPtr<UShipSegmentManager> Nose;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Instanced, Category = "Segments")
-	TObjectPtr<UShipSegmentManager> Body;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Instanced, Category = "Segments")
-	TObjectPtr<UShipSegmentManager> Tail;
-	
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Management")
-	float TickRate;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Management")
-	float BaseHeatGain;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default", meta = (ToolTip = "The rate in seconds at which ship systems tick"))
+	float SystemTickRate;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default|Stats", meta = (ToolTip = "The base amount of heat gained per tick before any modifiers"))
+	float BaseHeatGainPerTick;
 	
 protected:
 	virtual void BeginPlay() override;
 	
 private:
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Stats|Fuel", meta = (AllowPrivateAccess = "true"))
-	float Fuel = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Stats|Fuel", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
+	float MaxMass = 0.0f;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
 	float MaxFuel = 0.0f;
+	
+	void InitSegments();
+	void InitAttributes() const;
 	
 	void TickSystems();
 	FTimerHandle TickHandle;
 	
 	UPROPERTY()
-	TArray<UShipSegmentManager*> Segments;
+	TArray<TObjectPtr<AShipSegmentManager>> Segments;
 	
 	void UpdateHeat() const;
 };

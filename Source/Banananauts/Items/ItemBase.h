@@ -3,17 +3,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "GameplayTagAssetInterface.h"
 #include "GameFramework/Actor.h"
 #include "ItemBase.generated.h"
 
 UCLASS()
-class BANANANAUTS_API AItemBase : public AActor, public IGameplayTagAssetInterface
+class BANANANAUTS_API AItemBase : public AActor, public IGameplayTagAssetInterface, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
 	AItemBase();
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
+	UAbilitySystemComponent* AbilitySystemComponent;
+	
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tags")
 	FGameplayTagContainer GameplayTags;
