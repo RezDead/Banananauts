@@ -175,3 +175,22 @@ float UShipStatsUtility::CalculateHeatMult(const AShipSegmentManager* Segment)
 	return FMath::Lerp(1.0f, 0.5f, (HeatAblationPercent - 0.5f) * 2.0f);
 }
 
+/**
+ * Calculates the percent progress additive for the ship since last tick.
+ * 
+ * @param Mass Mass of the ship
+ * @param Thrust Thrust of the ship
+ * @param MinTime Minimum time for the ship to reach max progress
+ * @param LinearGrowthRate Linear growth rate of the ship
+ * @param DeltaSeconds Delta time since last tick
+ * @return Percent progress additive for the ship since last tick
+ */
+float UShipStatsUtility::CalculateShipProgressAdditive(const float& Mass, const float& Thrust, const float& MinTime,
+                                                       const float& LinearGrowthRate, const float& DeltaSeconds)
+{
+	//Time at a given moment (60 is to convert min to seconds)
+	const float Time = 60 * (MinTime + LinearGrowthRate * Mass - Thrust);
+	
+	return DeltaSeconds / Time;
+}
+
