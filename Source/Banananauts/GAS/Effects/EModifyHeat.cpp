@@ -13,7 +13,7 @@ UEModifyHeat::UEModifyHeat()
 	//General Mod Info
 	FGameplayModifierInfo ModInfo;
 	ModInfo.Attribute = UShipSegmentAttributes::GetHeatAttribute();
-	ModInfo.ModifierOp = EGameplayModOp::Additive;
+	ModInfo.ModifierOp = EGameplayModOp::AddFinal;
 
 	//Use gameplay tag "Data.Magnitude" to set the modifier magnitude
 	FSetByCallerFloat SetByCallerData;
