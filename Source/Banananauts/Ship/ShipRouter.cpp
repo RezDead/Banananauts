@@ -1,0 +1,43 @@
+﻿// Banananauts© 2026 by Monkey Business. Bananauts is a student project and is provided entirely not-for-profit. Bananauts uses Unreal® Engine. Unreal® is a trademark or registered trademark of Epic Games, Inc. in the United States of America and elsewhere. Unreal® Engine, Copyright 1998 – 2026, Epic Games, Inc. All rights reserved.
+
+
+#include "ShipRouter.h"
+
+
+// Sets default values
+AShipRouter::AShipRouter()
+{
+	PrimaryActorTick.bCanEverTick = false;
+	
+	Spline = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
+	SetRootComponent(Spline);
+}
+
+/**
+ * Gets the transform along the spline at a certain percentage of its length.
+ * 
+ * @param Alpha Percent at which to get transform.
+ * @return Transform along spline at the given percentage.
+ */
+FTransform AShipRouter::GetPositionAtPercent(const float Alpha) const
+{
+	const float Distance = FMath::Lerp(0.0f, SplineLength, Alpha);
+	return Spline->GetTransformAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World);
+}
+
+void AShipRouter::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	
+	if (Spline)
+	{
+		SplineLength = Spline->GetSplineLength();
+	}
+}
+
+// Called when the game starts or when spawned
+void AShipRouter::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
