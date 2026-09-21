@@ -5,9 +5,13 @@
 
 #include "Banananauts/GAS/Effects/EModifyHeat.h"
 #include "Banananauts/Utilities/ShipStatsUtility.h"
+#include "Kismet/GameplayStatics.h"
 
 AShipManager::AShipManager()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
+	
 	MinFlightTime = 7.5f;
 	FlightLinearGrowthRate = 0.05556f;
 	
@@ -35,7 +39,22 @@ void AShipManager::Tick(const float DeltaTime)
 	
 	if (bIsFlying)
 	{
-		UpdateShipProgress(DeltaTime);
+		//Update ship progress
+		ShipProgress += UShipStatsUtility::CalculateShipProgressAdditive(Attributes->GetMass(), FuelComposition.Thrust,
+																	 MinFlightTime, FlightLinearGrowthRate, DeltaTime);
+		
+		if (ShipProgress >= 1)
+		{
+			const FTransform NewTransform = ShipRouter->GetTransformAtPercent(1.0f);
+			SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
+			
+			//Win Condition Functionality Needed
+			
+		}
+		
+		//Update position
+		const FTransform NewTransform = ShipRouter->GetTransformAtPercent(ShipProgress);
+		SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
 	}
 }
 
@@ -82,22 +101,18 @@ void AShipManager::InitAttributes() const
 }
 
 /**
- * Updates the progress of the ship. To be called every tick when the ship is in flight.
- * 
- * @param DeltaTime Time since last tick.
- */
-void AShipManager::UpdateShipProgress(const float& DeltaTime)
-{
-	ShipProgress += UShipStatsUtility::CalculateShipProgressAdditive(Attributes->GetMass(), FuelComposition.Thrust,
-	                                                                 MinFlightTime, FlightLinearGrowthRate, DeltaTime);
-}
-
-/**
  * Initiates the flight of the ship and all in-flight systems.
  */
 void AShipManager::InitiateFlight()
 {
 	bIsFlying = true;
+	
+	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
+	if (!ShipRouter.IsValid())
+	{
+		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
+	}
+	
 	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
 }
 

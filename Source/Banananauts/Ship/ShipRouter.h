@@ -25,10 +25,8 @@ public:
 	USplineComponent* Spline;
 	
 	UFUNCTION(BlueprintCallable)
-	FTransform GetPositionAtPercent(float Alpha) const;
+	FTransform GetTransformAtPercent(float Alpha) const;
 	
-	virtual void OnConstruction(const FTransform& Transform) override;
-
 protected:
 	virtual void BeginPlay() override;
 	

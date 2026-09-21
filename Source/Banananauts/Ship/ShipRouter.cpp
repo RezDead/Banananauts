@@ -19,25 +19,20 @@ AShipRouter::AShipRouter()
  * @param Alpha Percent at which to get transform.
  * @return Transform along spline at the given percentage.
  */
-FTransform AShipRouter::GetPositionAtPercent(const float Alpha) const
+FTransform AShipRouter::GetTransformAtPercent(const float Alpha) const
 {
 	const float Distance = FMath::Lerp(0.0f, SplineLength, Alpha);
 	return Spline->GetTransformAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World);
-}
-
-void AShipRouter::OnConstruction(const FTransform& Transform)
-{
-	Super::OnConstruction(Transform);
-	
-	if (Spline)
-	{
-		SplineLength = Spline->GetSplineLength();
-	}
 }
 
 // Called when the game starts or when spawned
 void AShipRouter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if (Spline)
+	{
+		SplineLength = Spline->GetSplineLength();
+	}
 }
 

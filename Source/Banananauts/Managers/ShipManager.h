@@ -6,6 +6,7 @@
 #include "Components/ChildActorComponent.h"
 #include "ShipSegmentManager.h"
 #include "Banananauts/GAS/Attributes/ShipAttributes.h"
+#include "Banananauts/Ship/ShipRouter.h"
 #include "Banananauts/Structs/FuelComposition.h"
 #include "UObject/Object.h"
 #include "ShipManager.generated.h"
@@ -76,6 +77,8 @@ private:
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
 	bool bIsFlying = false;
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
+	TWeakObjectPtr<AShipRouter> ShipRouter = nullptr;
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
 	float ShipProgress = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
 	float MinFlightTime = 0.0f;
@@ -87,8 +90,6 @@ private:
 	
 	void InitSegments();
 	void InitAttributes() const;
-	
-	void UpdateShipProgress(const float& DeltaTime);
 	
 	void TickSystems();
 	FTimerHandle TickHandle;

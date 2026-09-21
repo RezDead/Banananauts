@@ -188,8 +188,8 @@ float UShipStatsUtility::CalculateHeatMult(const AShipSegmentManager* Segment)
 float UShipStatsUtility::CalculateShipProgressAdditive(const float& Mass, const float& Thrust, const float& MinTime,
                                                        const float& LinearGrowthRate, const float& DeltaSeconds)
 {
-	//Time at a given moment
-	const float Time = MinTime + LinearGrowthRate * Mass - Thrust;
+	//Time at a given moment (60 is to convert min to seconds)
+	const float Time = 60 * (MinTime + LinearGrowthRate * Mass - Thrust);
 	
 	return DeltaSeconds / Time;
 }
