@@ -8,6 +8,9 @@
 
 AShipManager::AShipManager()
 {
+	MinFlightTime = 7.5f;
+	FlightLinearGrowthRate = 0.05556f;
+	
 	SystemTickRate = 5.0f;
 	BaseHeatGainPerTick = 1.0f;
 	
@@ -24,6 +27,16 @@ AShipManager::AShipManager()
 	NoseSegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
 	BodySegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
 	TailSegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
+}
+
+void AShipManager::Tick(const float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	
+	if (bIsFlying)
+	{
+		UpdateShipProgress(DeltaTime);
+	}
 }
 
 void AShipManager::BeginPlay()
@@ -69,10 +82,22 @@ void AShipManager::InitAttributes() const
 }
 
 /**
+ * Updates the progress of the ship. To be called every tick when the ship is in flight.
+ * 
+ * @param DeltaTime Time since last tick.
+ */
+void AShipManager::UpdateShipProgress(const float& DeltaTime)
+{
+	ShipProgress += UShipStatsUtility::CalculateShipProgressAdditive(Attributes->GetMass(), FuelComposition.Thrust,
+	                                                                 MinFlightTime, FlightLinearGrowthRate, DeltaTime);
+}
+
+/**
  * Initiates the flight of the ship and all in-flight systems.
  */
 void AShipManager::InitiateFlight()
 {
+	bIsFlying = true;
 	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
 }
 

@@ -6,13 +6,14 @@
 #include "Components/ChildActorComponent.h"
 #include "ShipSegmentManager.h"
 #include "Banananauts/GAS/Attributes/ShipAttributes.h"
+#include "Banananauts/Structs/FuelComposition.h"
 #include "UObject/Object.h"
 #include "ShipManager.generated.h"
 
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 9/17/2026
+ * Last Edited: 9/21/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
@@ -61,6 +62,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default|Stats", meta = (ToolTip = "The base amount of heat gained per tick before any modifiers"))
 	float BaseHeatGainPerTick;
 	
+	virtual void Tick(float DeltaTime) override;
+	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -70,8 +73,22 @@ private:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
 	float MaxFuel = 0.0f;
 	
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
+	bool bIsFlying = false;
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
+	float ShipProgress = 0.0f;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
+	float MinFlightTime = 0.0f;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
+	float FlightLinearGrowthRate = 0.0f;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
+	FFuelComposition FuelComposition;
+	
 	void InitSegments();
 	void InitAttributes() const;
+	
+	void UpdateShipProgress(const float& DeltaTime);
 	
 	void TickSystems();
 	FTimerHandle TickHandle;
