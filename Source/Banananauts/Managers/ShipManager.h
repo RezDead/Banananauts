@@ -69,6 +69,9 @@ protected:
 	virtual void BeginPlay() override;
 	
 private:
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
+	UDataTable* LevelsDT;
+	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
 	float MaxMass = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
@@ -80,6 +83,9 @@ private:
 	TWeakObjectPtr<AShipRouter> ShipRouter = nullptr;
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
 	float ShipProgress = 0.0f;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight",
+		meta = (AllowPrivateAccess = "true", ToolTip = "The rate at which gallons of fuel is consumed per minute"))
+	float FuelBurnRate = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
 	float MinFlightTime = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
@@ -87,6 +93,8 @@ private:
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
 	FFuelComposition FuelComposition;
+	
+	bool bIsChangingLevel = false;
 	
 	void InitSegments();
 	void InitAttributes() const;
@@ -98,4 +106,8 @@ private:
 	TArray<TObjectPtr<AShipSegmentManager>> Segments;
 	
 	void UpdateHeat() const;
+	void ConsumeFuel(const float& DeltaTime) const;
+	
+	void Success();
+	void Failure();
 };

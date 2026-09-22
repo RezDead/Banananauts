@@ -3,6 +3,7 @@
 
 #include "ShipManager.h"
 
+#include "Banananauts/GAS/Effects/EModifyFuel.h"
 #include "Banananauts/GAS/Effects/EModifyHeat.h"
 #include "Banananauts/Utilities/ShipStatsUtility.h"
 #include "Kismet/GameplayStatics.h"
@@ -17,6 +18,7 @@ AShipManager::AShipManager()
 	
 	SystemTickRate = 5.0f;
 	BaseHeatGainPerTick = 1.0f;
+	FuelBurnRate = 10.0f;
 	
 	MaxMass = 0.0f;
 	MaxFuel = 0.0f;
@@ -48,13 +50,18 @@ void AShipManager::Tick(const float DeltaTime)
 			const FTransform NewTransform = ShipRouter->GetTransformAtPercent(1.0f);
 			SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
 			
-			//Win Condition Functionality Needed
-			
+			Success();
 		}
 		
 		//Update position
 		const FTransform NewTransform = ShipRouter->GetTransformAtPercent(ShipProgress);
 		SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
+		
+		ConsumeFuel(DeltaTime);
+		
+		if (Attributes->GetFuel() <= 0)
+			Failure();
+		
 	}
 }
 
@@ -198,4 +205,66 @@ void AShipManager::UpdateHeat() const
 		SpecHandle.Data.Get()->SetSetByCallerMagnitude(MagTag, BaseHeatGainPerTick * HeatMult);
 		ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	}
+}
+
+/**
+ * Consumes fuel at the rate of FuelBurnRate per minute, to be used on tick during flight.
+ * 
+ * @param DeltaTime Time since last tick.
+ */
+void AShipManager::ConsumeFuel(const float& DeltaTime) const
+{
+	if (!AbilitySystemComponent)
+		return;
+	
+	//60 Converts minutes to seconds
+	const float ConsumedFuel = DeltaTime / (FuelBurnRate * 60);
+	
+	const FGameplayTag MagTag = FGameplayTag::RequestGameplayTag(FName("Data.Magnitude"));
+	if (!MagTag.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ShipManager::ConsumeFuel - Invalid magnitude tag"));
+		return;;
+	}
+	
+	const FGameplayEffectContextHandle ContextHandle = AbilitySystemComponent->MakeEffectContext();
+	const FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(
+		UEModifyFuel::StaticClass(),
+		1.0f,
+		ContextHandle
+	);
+	
+	SpecHandle.Data.Get()->SetSetByCallerMagnitude(MagTag, -ConsumedFuel);
+	AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+}
+
+/**
+ * What happens when the ship succeeds. Currently not implemented.
+ */
+void AShipManager::Success()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ShipManager::Success - Game Won, need to add implementation"));
+}
+
+/**
+ * What happens when the ship fails. Currently not implemented.
+ */
+void AShipManager::Failure()
+{
+	if (bIsChangingLevel)
+		return;
+	
+	UE_LOG(LogTemp, Display, TEXT("ShipManager::Failure - Game Lost"));
+	
+	bIsChangingLevel = true;
+	
+	const TSoftObjectPtr<UWorld> LevelToLoad = UShipStatsUtility::GetRandomLevel(LevelsDT);
+	
+	if (LevelToLoad.GetAssetName().IsEmpty())
+	{
+		UE_LOG(LogTemp, Error, TEXT("ShipManager::Failure - Invalid level to load, make sure Levels DT is valid"));
+		return;
+	}
+	
+	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
 }

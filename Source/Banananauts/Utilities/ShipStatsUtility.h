@@ -28,6 +28,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
 	static bool AddBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments);
 	
+	static 	TSoftObjectPtr<UWorld> GetRandomLevel(const UDataTable* LevelsDT);
+	
 	static float CalculateHeatMult(const AShipSegmentManager* Segment);
 	
 	static float CalculateShipProgressAdditive(const float& Mass, const float& Thrust, const float& MinTime,
