@@ -69,6 +69,9 @@ protected:
 	virtual void BeginPlay() override;
 	
 private:
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
+	UDataTable* LevelsDT;
+	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
 	float MaxMass = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
@@ -90,6 +93,8 @@ private:
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
 	FFuelComposition FuelComposition;
+	
+	bool bIsChangingLevel = false;
 	
 	void InitSegments();
 	void InitAttributes() const;

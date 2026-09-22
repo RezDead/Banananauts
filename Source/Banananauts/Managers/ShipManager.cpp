@@ -251,5 +251,14 @@ void AShipManager::Success()
  */
 void AShipManager::Failure()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::Failure - Game Lost, need to add implementation"));
+	if (bIsChangingLevel)
+		return;
+	
+	UE_LOG(LogTemp, Display, TEXT("ShipManager::Failure - Game Lost"));
+	
+	bIsChangingLevel = true;
+	
+	const TSoftObjectPtr<UWorld> LevelToLoad = UShipStatsUtility::GetRandomLevel(LevelsDT);
+	
+	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
 }
