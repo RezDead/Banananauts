@@ -260,5 +260,11 @@ void AShipManager::Failure()
 	
 	const TSoftObjectPtr<UWorld> LevelToLoad = UShipStatsUtility::GetRandomLevel(LevelsDT);
 	
+	if (LevelToLoad.GetAssetName().IsEmpty())
+	{
+		UE_LOG(LogTemp, Error, TEXT("ShipManager::Failure - Invalid level to load, make sure Levels DT is valid"));
+		return;
+	}
+	
 	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
 }
