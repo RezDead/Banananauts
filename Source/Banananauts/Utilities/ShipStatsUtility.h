@@ -10,7 +10,7 @@
 /**
  * Utility class for calculating ship stats/data and certain functions.
  * 
- * Last Edited: 9/17/2026
+ * Last Edited: 9/21/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -29,6 +29,9 @@ public:
 	static bool AddBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments);
 	
 	static float CalculateHeatMult(const AShipSegmentManager* Segment);
+	
+	static float CalculateShipProgressAdditive(const float& Mass, const float& Thrust, const float& MinTime,
+	                                           const float& LinearGrowthRate, const float& DeltaSeconds);
 	
 private:
 	static bool RemoveBananaHelper(int& Amount, AShipSegmentManager* Segment);
