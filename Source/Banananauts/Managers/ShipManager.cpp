@@ -22,6 +22,9 @@ AShipManager::AShipManager()
 	
 	MaxMass = 0.0f;
 	MaxFuel = 0.0f;
+	
+	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
+	SetRootComponent(RootSceneComponent);
 		
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	Attributes = CreateDefaultSubobject<UShipAttributes>(TEXT("ShipAttributes"));
@@ -33,6 +36,10 @@ AShipManager::AShipManager()
 	NoseSegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
 	BodySegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
 	TailSegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
+	
+	NoseSegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	BodySegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	TailSegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 void AShipManager::Tick(const float DeltaTime)
@@ -75,8 +82,7 @@ void AShipManager::BeginPlay()
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	
 	InitAttributes();
-	
-	InitiateFlight();
+
 }
 
 /**

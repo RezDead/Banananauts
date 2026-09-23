@@ -68,6 +68,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USceneComponent* RootSceneComponent;
+	
 private:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	UDataTable* LevelsDT;

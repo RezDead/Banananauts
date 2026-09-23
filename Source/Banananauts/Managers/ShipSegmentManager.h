@@ -6,6 +6,7 @@
 #include "AbilitySystemInterface.h"
 #include "Banananauts/Enums/BurnStatus.h"
 #include "Banananauts/GAS/Attributes/ShipSegmentAttributes.h"
+#include "Banananauts/Interfaces/AttachableSegment.h"
 #include "UObject/Object.h"
 #include "ShipSegmentManager.generated.h"
 
@@ -20,7 +21,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBananasEmpty, bool, Empty);
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default")
-class BANANANAUTS_API AShipSegmentManager : public AActor, public IAbilitySystemInterface
+class BANANANAUTS_API AShipSegmentManager : public AActor, public IAbilitySystemInterface, public IAttachableSegment,
+                                            public IGameplayTagAssetInterface
 {
 	GENERATED_BODY()
 	
@@ -31,6 +33,11 @@ public:
 	UAbilitySystemComponent* AbilitySystemComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
 	UShipSegmentAttributes* Attributes;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tags")
+	FGameplayTagContainer GameplayTags;
+	
+	virtual void GetOwnedGameplayTags(FGameplayTagContainer& OutContainer) const override
+	{ OutContainer = GameplayTags; }
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
