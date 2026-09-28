@@ -23,5 +23,5 @@ class BANANANAUTS_API IAttachableSegment
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "AttachItem")
-	void AttachItem(int Mass);
+	void AttachItem(AActor* Item);
 };

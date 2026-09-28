@@ -17,7 +17,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBananasEmpty, bool, Empty);
  * Holds the attributes and ASC that handles the state of the ship segments.
  * All data handling is handled by the attribute class.
  * 
- * Last Edited: 9/17/2026
+ * Last Edited: 9/28/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default")
@@ -41,6 +41,8 @@ public:
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
+	virtual void AttachItem_Implementation(AActor* Item) override;
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -55,4 +57,7 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	int MaxBananas = 0;
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
+	TArray<AActor*> AttachedItems;
 };
