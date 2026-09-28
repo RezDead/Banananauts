@@ -14,6 +14,8 @@ AItemBase::AItemBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
+	SetRootComponent(ItemMesh);
 }
 
 void AItemBase::OnConstruction(const FTransform& Transform)
@@ -27,11 +29,13 @@ void AItemBase::OnConstruction(const FTransform& Transform)
 	}
 
 	const FString ContextString((TEXT("Looking up item info in class %s"), *GetName()));
-	
-	FTRB_ItemInformation* ItemRow = ItemInfoDT->FindRow<FTRB_ItemInformation>(*GetName(), ContextString);
-	
-	if (ItemRow)
+
+	if (const FTRB_ItemInformation* ItemRow = ItemInfoDT->FindRow<FTRB_ItemInformation>(*GetName(), ContextString))
 	{
+		DisplayName = ItemRow->DisplayName;
+		ItemMesh->SetStaticMesh(ItemRow->Mesh);
+		GameplayTags = ItemRow->Tags;
+		AddItemTypeTag(ItemRow->Type);
 		InitializeItemAttributes(ItemRow);
 	}
 	else
@@ -54,6 +58,11 @@ void AItemBase::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+/**
+ * Initializes the item's attributes based on the provided item information row.
+ * 
+ * @param ItemRow The item information row containing attribute data.
+ */
 void AItemBase::InitializeItemAttributes(const FTRB_ItemInformation* ItemRow)
 {
 	if (HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Attribute.Item.Mass"))))
@@ -102,5 +111,44 @@ void AItemBase::InitializeItemAttributes(const FTRB_ItemInformation* ItemRow)
 	if (!HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Attribute.Item.Stability"))) && ItemRow->Stability != 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Item %s does not have a stability attribute tag but has a stability value."), *ItemRow->DisplayName.ToString());
+	}
+}
+
+/**
+ * Adds a gameplay tag based on the item type.
+ * 
+ * @param ItemType The type of the item.
+ */
+void AItemBase::AddItemTypeTag(const EItemTypes& ItemType)
+{
+	switch (ItemType)
+	{
+		case EItemTypes::BoltOn:
+			GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Type.Item.BoltOn")));
+			break;
+		
+		case EItemTypes::Wall:
+			GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Type.Item.Wall")));
+			break;
+		
+		case EItemTypes::Activated:
+			GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Type.Item.Activated")));
+			break;
+		
+		case EItemTypes::Fuel:
+			GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Type.Item.Fuel")));
+			break;
+		
+		case EItemTypes::Catalyst:
+			GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Type.Item.Catalyst")));
+			break;
+		
+		case EItemTypes::Engine:
+			GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Type.Item.Engine")));
+			break;
+		
+		case EItemTypes::Thruster:
+			GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Type.Item.Thruster")));
+			break;
 	}
 }

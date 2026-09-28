@@ -19,7 +19,7 @@ struct FTRB_ItemInformation : public FTableRowBase
 	FName DisplayName;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Model")
-	UStaticMesh* Model;
+	UStaticMesh* Mesh;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Type")
 	EItemTypes Type;

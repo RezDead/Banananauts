@@ -25,17 +25,20 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
 	UAbilitySystemComponent* AbilitySystemComponent;
-	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tags")
 	FGameplayTagContainer GameplayTags;
-	
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& OutContainer) const override
 	{ OutContainer = GameplayTags; }
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Data")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UStaticMeshComponent* ItemMesh;
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "General")
 	UDataTable* ItemInfoDT;
+	UPROPERTY(BlueprintReadOnly, Category = "General|Data")
+	FName DisplayName;
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
@@ -46,4 +49,5 @@ protected:
 	
 private:
 	void InitializeItemAttributes(const FTRB_ItemInformation* ItemRow);
+	void AddItemTypeTag(const EItemTypes& ItemType);
 };
