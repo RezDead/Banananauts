@@ -35,10 +35,16 @@ public:
 	
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& OutContainer) const override
 	{ OutContainer = GameplayTags; }
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Data")
+	UDataTable* ItemInfoDT;
 
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+	virtual void Tick(float DeltaTime) override;
+	
 protected:
 	virtual void BeginPlay() override;
-
-public:
-	virtual void Tick(float DeltaTime) override;
+	
+	
 };
