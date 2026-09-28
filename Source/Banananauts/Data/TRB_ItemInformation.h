@@ -36,6 +36,9 @@ struct FTRB_ItemInformation : public FTableRowBase
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Min Heat")
 	float MinHeat;
 	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Max Heat")
+	float MaxHeat;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Stability")
 	float Stability;
 };

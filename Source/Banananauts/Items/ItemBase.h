@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayTagAssetInterface.h"
-#include "Banananauts/GAS/Attributes/ItemAttributes.h"
+#include "Banananauts/Data/TRB_ItemInformation.h"
 #include "GameFramework/Actor.h"
 #include "ItemBase.generated.h"
 
@@ -22,11 +22,9 @@ class BANANANAUTS_API AItemBase : public AActor, public IGameplayTagAssetInterfa
 
 public:
 	AItemBase();
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
 	UAbilitySystemComponent* AbilitySystemComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
-	UItemAttributes* Attributes;
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
@@ -46,5 +44,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	
-	
+private:
+	void InitializeItemAttributes(const FTRB_ItemInformation* ItemRow);
 };

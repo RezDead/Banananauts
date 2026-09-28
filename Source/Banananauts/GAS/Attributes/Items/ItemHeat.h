@@ -3,40 +3,31 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
-#include "ItemAttributes.generated.h"
+#include "AbilitySystemComponent.h"
+#include "ItemHeat.generated.h"
 
 /**
- * Attributes that items will have.
+ * Heat attribute and handling for items.
  * 
- * Last Edited: 9/27/2026
+ * Last Edited: 9/28/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
-class BANANANAUTS_API UItemAttributes : public UAttributeSet
+class BANANANAUTS_API UItemHeat : public UAttributeSet
 {
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(BlueprintReadOnly, Category = "Mass")
-	FGameplayAttributeData Mass;
-	ATTRIBUTE_ACCESSORS_BASIC(UItemAttributes, Mass)
-	
-	UPROPERTY(BlueprintReadOnly, Category = "Stability")
-	FGameplayAttributeData Stability;
-	ATTRIBUTE_ACCESSORS_BASIC(UItemAttributes, Stability)
-	
-	UPROPERTY(BlueprintReadOnly, Category = "Heat Ablation")
-	FGameplayAttributeData HeatAblation;
-	ATTRIBUTE_ACCESSORS_BASIC(UItemAttributes, HeatAblation)
-	
 	UPROPERTY(BlueprintReadOnly, Category = "Heat")
 	FGameplayAttributeData Heat;
-	ATTRIBUTE_ACCESSORS_BASIC(UItemAttributes, Heat)
+	ATTRIBUTE_ACCESSORS_BASIC(UItemHeat, Heat)
+	UPROPERTY(BlueprintReadOnly, Category = "Heat")
+	FGameplayAttributeData MinHeat;
+	ATTRIBUTE_ACCESSORS_BASIC(UItemHeat, MinHeat)
 	UPROPERTY(BlueprintReadOnly, Category = "Heat")
 	FGameplayAttributeData MaxHeat;
-	ATTRIBUTE_ACCESSORS_BASIC(UItemAttributes, MaxHeat)
+	ATTRIBUTE_ACCESSORS_BASIC(UItemHeat, MaxHeat)
 	
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 };
