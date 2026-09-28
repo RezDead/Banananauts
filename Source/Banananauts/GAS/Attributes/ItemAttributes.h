@@ -18,6 +18,7 @@ class BANANANAUTS_API UItemAttributes : public UAttributeSet
 {
 	GENERATED_BODY()
 	
+public:
 	UPROPERTY(BlueprintReadOnly, Category = "Mass")
 	FGameplayAttributeData Mass;
 	ATTRIBUTE_ACCESSORS_BASIC(UItemAttributes, Mass)
@@ -37,6 +38,5 @@ class BANANANAUTS_API UItemAttributes : public UAttributeSet
 	FGameplayAttributeData MaxHeat;
 	ATTRIBUTE_ACCESSORS_BASIC(UItemAttributes, MaxHeat)
 	
-public:
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 };

@@ -2,3 +2,8 @@
 
 
 #include "ItemAttributes.h"
+
+void UItemAttributes::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
+{
+	Super::PreAttributeChange(Attribute, NewValue);
+}
