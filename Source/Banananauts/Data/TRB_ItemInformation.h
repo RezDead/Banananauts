@@ -14,15 +14,12 @@ USTRUCT(BlueprintType)
 struct FTRB_ItemInformation : public FTableRowBase
 {
 	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite,EditAnywhere, Category = "Item ID")
-	FName ItemID;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Display Name")
 	FName DisplayName;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Model")
-	FString Model;
+	UStaticMesh* Model;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Type")
 	EItemTypes Type;
