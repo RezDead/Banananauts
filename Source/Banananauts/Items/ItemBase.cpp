@@ -37,6 +37,7 @@ void AItemBase::OnConstruction(const FTransform& Transform)
 		GameplayTags = ItemRow->Tags;
 		AddItemTypeTag(ItemRow->Type);
 		InitializeItemAttributes(ItemRow);
+		LogItemAttributeErrors(ItemRow);
 	}
 	else
 	{
@@ -94,7 +95,15 @@ void AItemBase::InitializeItemAttributes(const FTRB_ItemInformation* ItemRow)
 		StabilitySet->InitStability(ItemRow->Stability);
 		AbilitySystemComponent->AddAttributeSetSubobject(StabilitySet);
 	}
-	
+}
+
+/**
+ * Logs any errors in the item attributes based on the item row
+ * 
+ * @param ItemRow Item row associated with the item
+ */
+void AItemBase::LogItemAttributeErrors(const FTRB_ItemInformation* ItemRow) const
+{
 	//User error logging
 	if (!HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Attribute.Item.Mass"))) && ItemRow->Mass != 0)
 	{

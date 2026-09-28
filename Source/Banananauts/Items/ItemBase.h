@@ -43,7 +43,8 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 	virtual void Tick(float DeltaTime) override;
-	
+	void LogItemAttributeErrors(const FTRB_ItemInformation* ItemRow) const;
+
 protected:
 	virtual void BeginPlay() override;
 	
