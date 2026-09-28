@@ -10,9 +10,9 @@ UENUM(BlueprintType)
 enum class EItemTypes : uint8
 {
 	BoltOn      UMETA(DisplayName = "Bolt-On"),
-	Wall		UMETA(DisplayName = "Overheating"),
-	Activated   UMETA(DisplayName = "Burning"),
-	Fuel		UMETA(DisplayName = "Explosive"),
+	Wall		UMETA(DisplayName = "Wall"),
+	Activated   UMETA(DisplayName = "Activated"),
+	Fuel		UMETA(DisplayName = "Fuel"),
 	Catalyst    UMETA(DisplayName = "Catalyst"),
 	Engine		UMETA(DisplayName = "Engine"),
 	Thruster    UMETA(DisplayName = "Thruster"),

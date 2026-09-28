@@ -14,7 +14,12 @@ AItemBase::AItemBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
+	ItemMesh->SetMobility(EComponentMobility::Movable);
+	ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ItemMesh->SetCollisionProfileName(TEXT("PhysicsActor")); 
+	ItemMesh->SetSimulatePhysics(true);
 	SetRootComponent(ItemMesh);
 }
 
@@ -24,25 +29,15 @@ void AItemBase::OnConstruction(const FTransform& Transform)
 	
 	if (!ItemInfoDT)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ItemInfoDT is not set in %s"), *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("ItemInfoDT is not set in %s"), *GetClass()->GetName());
 		return;
 	}
 
-	const FString ContextString((TEXT("Looking up item info in class %s"), *GetName()));
+	const FString ContextString((TEXT("Looking up item info in class %s constructor"), *GetClass()->GetName()));
 
-	if (const FTRB_ItemInformation* ItemRow = ItemInfoDT->FindRow<FTRB_ItemInformation>(*GetName(), ContextString))
+	if (const FTRB_ItemInformation* ItemRow = ItemInfoDT->FindRow<FTRB_ItemInformation>(*GetClass()->GetName(), ContextString))
 	{
-		DisplayName = ItemRow->DisplayName;
 		ItemMesh->SetStaticMesh(ItemRow->Mesh);
-		GameplayTags = ItemRow->Tags;
-		AddItemTypeTag(ItemRow->Type);
-		InitializeItemAttributes(ItemRow);
-		LogItemAttributeErrors(ItemRow);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ItemInfoDT does not contain a row for %s"), *GetName());
-		return;
 	}
 }
 
@@ -51,6 +46,23 @@ void AItemBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (!ItemInfoDT)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ItemInfoDT is not set in %s"), *GetClass()->GetName());
+		return;
+	}
+
+	const FString ContextString((TEXT("Looking up item info in class %s begin play"), *GetClass()->GetName()));
+
+	if (const FTRB_ItemInformation* ItemRow = ItemInfoDT->FindRow<FTRB_ItemInformation>(*GetClass()->GetName(), ContextString))
+	{
+		DisplayName = ItemRow->DisplayName;
+		GameplayTags = ItemRow->Tags;
+		InitializeTypeTags(ItemRow->Type);
+		InitializeItemAttributes(ItemRow);
+		LogItemAttributeErrors(ItemRow);
+	}
+
 }
 
 // Called every frame
@@ -128,7 +140,7 @@ void AItemBase::LogItemAttributeErrors(const FTRB_ItemInformation* ItemRow) cons
  * 
  * @param ItemType The type of the item.
  */
-void AItemBase::AddItemTypeTag(const EItemTypes& ItemType)
+void AItemBase::InitializeTypeTags(const EItemTypes& ItemType)
 {
 	switch (ItemType)
 	{
