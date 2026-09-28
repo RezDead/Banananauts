@@ -42,5 +42,9 @@ public:
 	FGameplayAttributeData MaxBananas;
 	ATTRIBUTE_ACCESSORS_BASIC(UShipSegmentAttributes, MaxBananas);
 	
+	UPROPERTY(BlueprintReadOnly, Category = "Stability")
+	FGameplayAttributeData Stability;
+	ATTRIBUTE_ACCESSORS_BASIC(UShipSegmentAttributes, Stability);
+	
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 };

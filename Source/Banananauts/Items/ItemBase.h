@@ -5,9 +5,16 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayTagAssetInterface.h"
+#include "Banananauts/GAS/Attributes/ItemAttributes.h"
 #include "GameFramework/Actor.h"
 #include "ItemBase.generated.h"
 
+/**
+ * Functionality/data that all items will share.
+ * 
+ * Last Edited: 9/27/2026
+ * Author: Julian Kroeger-Miller
+ */
 UCLASS()
 class BANANANAUTS_API AItemBase : public AActor, public IGameplayTagAssetInterface, public IAbilitySystemInterface
 {
@@ -18,6 +25,8 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
 	UAbilitySystemComponent* AbilitySystemComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
+	UItemAttributes* Attributes;
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
