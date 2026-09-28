@@ -5,9 +5,16 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayTagAssetInterface.h"
+#include "Banananauts/Data/TRB_ItemInformation.h"
 #include "GameFramework/Actor.h"
 #include "ItemBase.generated.h"
 
+/**
+ * Functionality/data that all items will share.
+ * 
+ * Last Edited: 9/27/2026
+ * Author: Julian Kroeger-Miller
+ */
 UCLASS()
 class BANANANAUTS_API AItemBase : public AActor, public IGameplayTagAssetInterface, public IAbilitySystemInterface
 {
@@ -15,21 +22,33 @@ class BANANANAUTS_API AItemBase : public AActor, public IGameplayTagAssetInterfa
 
 public:
 	AItemBase();
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
 	UAbilitySystemComponent* AbilitySystemComponent;
-	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tags")
 	FGameplayTagContainer GameplayTags;
-	
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& OutContainer) const override
 	{ OutContainer = GameplayTags; }
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Mesh")
+	UStaticMeshComponent* ItemMesh;
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "General")
+	UDataTable* ItemInfoDT;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "General|Data")
+	FName DisplayName;
+
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+	virtual void Tick(float DeltaTime) override;
 
 protected:
 	virtual void BeginPlay() override;
-
-public:
-	virtual void Tick(float DeltaTime) override;
+	
+private:
+	void InitializeItemAttributes(const FTRB_ItemInformation* ItemRow);
+	void InitializeTypeTags(const EItemTypes& ItemType);
+	void LogItemAttributeErrors(const FTRB_ItemInformation* ItemRow) const;
 };

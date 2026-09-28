@@ -5,6 +5,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
+#include "Banananauts/Enums/ItemTypes.h"
 #include "Engine/DataTable.h"
 #include "TRB_ItemInformation.generated.h"
 
@@ -12,19 +14,31 @@ USTRUCT(BlueprintType)
 struct FTRB_ItemInformation : public FTableRowBase
 {
 	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite,EditAnywhere, Category = "Item ID")
-	FName ItemID;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Display Name")
 	FName DisplayName;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Model")
-	FString ItemModel;
+	UStaticMesh* Mesh;
 	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Does Highlight?")
-	bool DoesHighlight;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Type")
+	EItemTypes Type;
 	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Highlight Color")
-	FLinearColor HighlightColor;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Tags")
+	FGameplayTagContainer Tags;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mass")
+	float Mass;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Heat Ablation")
+	float HeatAblation;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Min Heat")
+	float MinHeat;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Max Heat")
+	float MaxHeat;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Stability")
+	float Stability;
 };
