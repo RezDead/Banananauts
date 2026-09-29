@@ -60,4 +60,8 @@ private:
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	TArray<AActor*> AttachedItems;
+	
+	UPROPERTY (BlueprintReadOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
+	AActor* ShipRef;
+	
 };
