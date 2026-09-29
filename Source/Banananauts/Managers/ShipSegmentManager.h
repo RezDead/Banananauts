@@ -13,6 +13,15 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHeatStatusChanged, EBurnStatus, NewStatus);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBananasEmpty, bool, Empty);
 
+
+USTRUCT(Blueprintable)
+struct FEffectArrayWrapper
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Default", meta = (AllowPrivateAccess = "true"))
+	TArray<FActiveGameplayEffectHandle> EffectArray;
+};
 /**
  * Holds the attributes and ASC that handles the state of the ship segments.
  * All data handling is handled by the attribute class.
@@ -41,8 +50,6 @@ public:
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
-	virtual void AttachItem_Implementation(AActor* Item) override;
-	
 protected:
 	virtual void BeginPlay() override;
 
@@ -58,8 +65,10 @@ private:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	int MaxBananas = 0;
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	TArray<AActor*> AttachedItems;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Default", meta = (AllowPrivateAccess = "true"))
+	TMap<AActor*, FEffectArrayWrapper> AttachedEffects;
 	
 	UPROPERTY (BlueprintReadOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	AActor* ShipRef;

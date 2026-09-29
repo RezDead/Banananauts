@@ -2,9 +2,7 @@
 
 
 #include "ShipSegmentManager.h"
-
 #include "Banananauts/Items/ItemBase.h"
-#include "Banananauts/Utilities/ShipSegmentUtility.h"
 
 AShipSegmentManager::AShipSegmentManager()
 {
@@ -15,48 +13,11 @@ AShipSegmentManager::AShipSegmentManager()
 	MaxBananas = 0;
 }
 
-void AShipSegmentManager::AttachItem_Implementation(AActor* Item)
-{
-	//Error + Establish vars
-	if (!Item->IsA<AItemBase>())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ShipSegmentManager::AttachItem_Implementation - Tried to attach actor that is not an item"));
-		return;
-	}
-	
-	const UAbilitySystemComponent* ItemASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Item);
-	
-	if (!ItemASC)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ShipSegmentManager::AttachItem_Implementation - Tried to attach item without ASC"));
-		return;
-	}
-	
-	const UAbilitySystemComponent* ShipASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(ShipRef);
-	
-	if (!ShipASC)
-	{
-		UE_LOG(LogTemp, Error, TEXT("ShipSegmentManager::AttachItem_Implementation - ShipRef has no ASC"));
-		return;
-	}
-	
-	//Main Body
-	
-	AttachedItems.Add(Item);
-	
-	if (ItemASC->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Attribute.Item.Mass"))))
-	{
-		UShipSegmentUtility::AddItemMassToShip(ItemASC, ShipASC);
-	}
-	
-	IAttachableSegment::AttachItem_Implementation(Item);
-}
-
 void AShipSegmentManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	ShipRef = GetOwner();
+	ShipRef = GetParentActor();
 	
 	if (!ShipRef)
 		UE_LOG(LogTemp, Error, TEXT("ShipSegmentManager::BeginPlay - ShipRef is null, how did we get here?"));
