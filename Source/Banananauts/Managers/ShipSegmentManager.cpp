@@ -2,7 +2,6 @@
 
 
 #include "ShipSegmentManager.h"
-#include "Banananauts/Items/ItemBase.h"
 
 AShipSegmentManager::AShipSegmentManager()
 {

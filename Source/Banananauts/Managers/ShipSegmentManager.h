@@ -19,7 +19,7 @@ struct FEffectArrayWrapper
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Default", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	TArray<FActiveGameplayEffectHandle> EffectArray;
 };
 /**
@@ -65,8 +65,6 @@ private:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	int MaxBananas = 0;
 	
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Default", meta = (AllowPrivateAccess = "true"))
-	TArray<AActor*> AttachedItems;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	TMap<AActor*, FEffectArrayWrapper> AttachedEffects;
 	

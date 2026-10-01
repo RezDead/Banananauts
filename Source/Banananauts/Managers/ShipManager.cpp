@@ -32,10 +32,6 @@ AShipManager::AShipManager()
 	NoseSegmentComponent = CreateDefaultSubobject<UChildActorComponent>(TEXT("NoseSegment"));
 	BodySegmentComponent = CreateDefaultSubobject<UChildActorComponent>(TEXT("BodySegment"));
 	TailSegmentComponent = CreateDefaultSubobject<UChildActorComponent>(TEXT("TailSegment"));
-
-	NoseSegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
-	BodySegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
-	TailSegmentComponent->SetChildActorClass(AShipSegmentManager::StaticClass());
 	
 	NoseSegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	BodySegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
