@@ -113,4 +113,9 @@ private:
 	
 	void Success();
 	void Failure();
+	
+	void PopOffEvent(const int NumPopOffs) const;
+	
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
+	void PopOffTester() const {PopOffEvent(3);}
 };

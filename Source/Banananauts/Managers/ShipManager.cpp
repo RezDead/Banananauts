@@ -270,3 +270,39 @@ void AShipManager::Failure()
 	
 	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
 }
+
+void AShipManager::PopOffEvent(const int NumPopOffs) const
+{
+	//UE_LOG(LogTemp, Display, TEXT("ShipManager::PopOffEvent - %d items will be popped off"), NumPopOffs);
+	
+	TArray<AActor*> AttachedItems;
+	
+	AttachedItems.Append(Nose->GetAttachedItems());
+	AttachedItems.Append(Body->GetAttachedItems());
+	AttachedItems.Append(Tail->GetAttachedItems());
+	
+	//UE_LOG(LogTemp, Display, TEXT("ShipManager::PopOffEvent - %d items found on segments"), AttachedItems.Num());
+	
+	for (int i = 0; i < NumPopOffs; i++)
+	{
+		if (AttachedItems.Num() == 0)
+			break;
+
+		//UE_LOG(LogTemp, Display, TEXT("ShipManager::PopOffEvent - Popping off item %d"), i);
+		
+		const int RandomSelected = FMath::RandHelper(AttachedItems.Num());
+
+		AActor* SelectedItem = AttachedItems[RandomSelected];
+		AttachedItems.RemoveAt(RandomSelected);
+
+		if (AActor* Segment = SelectedItem->GetAttachParentActor(); Segment->Implements<UAttachableSegment>())
+		{
+			IAttachableSegment::Execute_RemoveItem(Segment, SelectedItem);
+			//UE_LOG(LogTemp, Display, TEXT("ShipManager::PopOffEvent - Item %d popped off"), i);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("ShipManager::PopOffEvent - Removed Item is not attached to a segment"));
+		}
+	}
+}
