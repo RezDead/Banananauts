@@ -95,8 +95,8 @@ void AItemBase::InitializeItemAttributes(const FTRB_ItemInformation* ItemRow)
 	if (HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Attribute.Item.Heat"))))
 	{
 		UItemHeat* HeatSet = NewObject<UItemHeat>(this);
-		HeatSet->InitHeat(ItemRow->MinHeat);
 		HeatSet->InitMinHeat(ItemRow->MinHeat);
+		HeatSet->InitHeat(ItemRow->MinHeat);
 		HeatSet->InitMaxHeat(ItemRow->MaxHeat);
 		AbilitySystemComponent->AddAttributeSetSubobject(HeatSet);
 	}
@@ -105,6 +105,7 @@ void AItemBase::InitializeItemAttributes(const FTRB_ItemInformation* ItemRow)
 	{
 		UItemStability* StabilitySet = NewObject<UItemStability>(this);
 		StabilitySet->InitStability(ItemRow->Stability);
+		StabilitySet->InitMaxStability(100.0f);
 		AbilitySystemComponent->AddAttributeSetSubobject(StabilitySet);
 	}
 }
