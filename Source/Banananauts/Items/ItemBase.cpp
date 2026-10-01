@@ -105,6 +105,7 @@ void AItemBase::InitializeItemAttributes(const FTRB_ItemInformation* ItemRow)
 	{
 		UItemStability* StabilitySet = NewObject<UItemStability>(this);
 		StabilitySet->InitStability(ItemRow->Stability);
+		StabilitySet->InitMaxStability(100.0f);
 		AbilitySystemComponent->AddAttributeSetSubobject(StabilitySet);
 	}
 }

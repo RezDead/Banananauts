@@ -11,7 +11,7 @@ struct BANANANAUTS_API FFuelComposition
 	GENERATED_BODY()
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Thrust;
+	float Thrust = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Volatility;
+	float Volatility = 0.0f;
 };
