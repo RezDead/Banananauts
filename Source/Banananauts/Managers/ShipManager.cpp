@@ -3,6 +3,7 @@
 
 #include "ShipManager.h"
 
+#include "Banananauts/GAS/Attributes/Items/ItemStability.h"
 #include "Banananauts/GAS/Effects/EModifyFuel.h"
 #include "Banananauts/GAS/Effects/EModifyHeat.h"
 #include "Banananauts/Utilities/ShipStatsUtility.h"
@@ -271,38 +272,55 @@ void AShipManager::Failure()
 	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
 }
 
+/**
+ * Attempts pop off of a given number of items from the ship based on their stability and adhered status.
+ * 
+ * @param NumPopOffs Number of items to attempt pop off.
+ */
 void AShipManager::PopOffEvent(const int NumPopOffs) const
 {
-	//UE_LOG(LogTemp, Display, TEXT("ShipManager::PopOffEvent - %d items will be popped off"), NumPopOffs);
-	
 	TArray<AActor*> AttachedItems;
 	
 	AttachedItems.Append(Nose->GetAttachedItems());
 	AttachedItems.Append(Body->GetAttachedItems());
 	AttachedItems.Append(Tail->GetAttachedItems());
 	
-	//UE_LOG(LogTemp, Display, TEXT("ShipManager::PopOffEvent - %d items found on segments"), AttachedItems.Num());
-	
 	for (int i = 0; i < NumPopOffs; i++)
 	{
 		if (AttachedItems.Num() == 0)
 			break;
-
-		//UE_LOG(LogTemp, Display, TEXT("ShipManager::PopOffEvent - Popping off item %d"), i);
 		
 		const int RandomSelected = FMath::RandHelper(AttachedItems.Num());
 
 		AActor* SelectedItem = AttachedItems[RandomSelected];
 		AttachedItems.RemoveAt(RandomSelected);
 
-		if (AActor* Segment = SelectedItem->GetAttachParentActor(); Segment->Implements<UAttachableSegment>())
+		const UAbilitySystemComponent* ItemASC = nullptr;
+
+		if (const IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(SelectedItem))
 		{
-			IAttachableSegment::Execute_RemoveItem(Segment, SelectedItem);
-			//UE_LOG(LogTemp, Display, TEXT("ShipManager::PopOffEvent - Item %d popped off"), i);
+			ItemASC = ASCInterface->GetAbilitySystemComponent();
 		}
-		else
+		else 
+		{ 
+			UE_LOG(LogTemp, Error, TEXT("ShipManager::PopOffEvent - Removed Item does not have an AbilitySystemInterface")); 
+			continue;
+		}
+		
+		//Rand Check if > Stability
+		if (FMath::RandRange(0.0f, 100.0f) > ItemASC->GetNumericAttribute(UItemStability::GetStabilityAttribute()))
 		{
-			UE_LOG(LogTemp, Error, TEXT("ShipManager::PopOffEvent - Removed Item is not attached to a segment"));
+			
+			if (AActor* Segment = SelectedItem->GetAttachParentActor(); Segment->Implements<UAttachableSegment>())
+			{
+				IAttachableSegment::Execute_RemoveItem(Segment, SelectedItem);
+				//UE_LOG(LogTemp, Display, TEXT("ShipManager::PopOffEvent - Item %d popped off"), i);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("ShipManager::PopOffEvent - Removed Item is not attached to a segment"));
+				continue;
+			}
 		}
 	}
 }
