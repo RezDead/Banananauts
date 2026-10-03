@@ -45,6 +45,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Stability")
 	FGameplayAttributeData Stability;
 	ATTRIBUTE_ACCESSORS_BASIC(UShipSegmentAttributes, Stability);
+	UPROPERTY(BlueprintReadOnly, Category = "Stability")
+	FGameplayAttributeData MaxStability;
+	ATTRIBUTE_ACCESSORS_BASIC(UShipSegmentAttributes, MaxStability);
 	
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 };

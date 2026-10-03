@@ -12,9 +12,22 @@ AShipSegmentManager::AShipSegmentManager()
 	MaxBananas = 0;
 }
 
+TArray<AActor*> AShipSegmentManager::GetAttachedItems() const
+{
+	TArray<AActor*> Ret;
+	AttachedEffects.GetKeys(Ret);
+	return Ret;
+}
+
 void AShipSegmentManager::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	ShipRef = GetParentActor();
+	
+	if (!ShipRef)
+		UE_LOG(LogTemp, Error, TEXT("ShipSegmentManager::BeginPlay - ShipRef is null, how did we get here?"));
+	
 	
 	if (AbilitySystemComponent)
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
