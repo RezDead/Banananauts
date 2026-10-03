@@ -23,6 +23,7 @@ AShipManager::AShipManager()
 	
 	MaxMass = 0.0f;
 	MaxFuel = 0.0f;
+	AdhereStatusStrength = 5.0f;
 	
 	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
 	SetRootComponent(RootSceneComponent);
