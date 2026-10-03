@@ -295,7 +295,7 @@ void AShipManager::PopOffEvent(const int NumPopOffs) const
 		AActor* SelectedItem = AttachedItems[RandomSelected];
 		AttachedItems.RemoveAt(RandomSelected);
 
-		const UAbilitySystemComponent* ItemASC = nullptr;
+		UAbilitySystemComponent* ItemASC = nullptr;
 
 		if (const IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(SelectedItem))
 		{
@@ -310,6 +310,13 @@ void AShipManager::PopOffEvent(const int NumPopOffs) const
 		//Rand Check if > Stability
 		if (FMath::RandRange(0.0f, 100.0f) > ItemASC->GetNumericAttribute(UItemStability::GetStabilityAttribute()))
 		{
+			//Adhere Handling
+			if (ItemASC->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Status.Adhered"))))
+			{
+				ItemASC->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag(FName("Status.Adhered")));
+				if (FMath::RandRange(0.0f, 100.0f) < AdhereStatusStrength)
+					continue;
+			}
 			
 			if (AActor* Segment = SelectedItem->GetAttachParentActor(); Segment->Implements<UAttachableSegment>())
 			{
