@@ -3,6 +3,8 @@
 
 #include "ShipRouter.h"
 
+#include "Kismet/KismetMathLibrary.h"
+
 
 // Sets default values
 AShipRouter::AShipRouter()
@@ -22,7 +24,17 @@ AShipRouter::AShipRouter()
 FTransform AShipRouter::GetTransformAtPercent(const float Alpha) const
 {
 	const float Distance = FMath::Lerp(0.0f, SplineLength, Alpha);
-	return Spline->GetTransformAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World);
+	
+	FTransform Ret;
+	const FVector Location = Spline->GetLocationAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World);
+	Ret.SetLocation(Location);
+	
+	FQuat Rot = Spline->GetDirectionAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World).ToOrientationQuat();
+	FQuat MeshOffset = FQuat(FRotator(-90.0f, 0.0f, 0.0f));
+	
+	Ret.SetRotation(Rot * MeshOffset);
+	
+	return Ret;
 }
 
 // Called when the game starts or when spawned

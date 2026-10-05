@@ -56,6 +56,8 @@ void AShipManager::Tick(const float DeltaTime)
 			SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
 			
 			Success();
+			
+			return;
 		}
 		
 		//Update position
@@ -64,8 +66,8 @@ void AShipManager::Tick(const float DeltaTime)
 		
 		ConsumeFuel(DeltaTime);
 		
-		if (Attributes->GetFuel() <= 0)
-			Failure();
+		// if (Attributes->GetFuel() <= 0)
+		// 	Failure();
 		
 	}
 }

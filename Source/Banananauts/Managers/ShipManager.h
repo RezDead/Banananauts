@@ -125,5 +125,7 @@ private:
 	void PopOffEvent(const int NumPopOffs) const;
 	
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
+	void BeginFlight() {Execute_BeginFlightSequence(this);}
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void PopOffTester() const {PopOffEvent(3);}
 };
