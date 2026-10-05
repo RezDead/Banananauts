@@ -114,8 +114,10 @@ void AShipManager::InitAttributes() const
 /**
  * Initiates the flight of the ship and all in-flight systems.
  */
-void AShipManager::InitiateFlight()
+void AShipManager::BeginFlightSequence_Implementation()
 {
+	IShipCommunication::BeginFlightSequence_Implementation();
+	
 	bIsFlying = true;
 	
 	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
