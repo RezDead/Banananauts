@@ -3,8 +3,6 @@
 
 #include "ShipSegmentManager.h"
 
-#include "Banananauts/Items/ItemBase.h"
-
 AShipSegmentManager::AShipSegmentManager()
 {
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
@@ -14,35 +12,22 @@ AShipSegmentManager::AShipSegmentManager()
 	MaxBananas = 0;
 }
 
-void AShipSegmentManager::AttachItem_Implementation(AActor* Item)
+TArray<AActor*> AShipSegmentManager::GetAttachedItems() const
 {
-	if (!Item->IsA<AItemBase>())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ShipSegmentManager::AttachItem_Implementation - Tried to attach actor that is not an item"));
-		return;
-	}
-	
-	const UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Item);
-	
-	if (!ASC)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ShipSegmentManager::AttachItem_Implementation - Tried to attach item without ASC"));
-		return;
-	}
-	
-	AttachedItems.Add(Item);
-	
-	if (ASC->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Attribute.Item.Mass"))))
-	{
-		
-	}
-	
-	IAttachableSegment::AttachItem_Implementation(Item);
+	TArray<AActor*> Ret;
+	AttachedEffects.GetKeys(Ret);
+	return Ret;
 }
 
 void AShipSegmentManager::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	ShipRef = GetParentActor();
+	
+	if (!ShipRef)
+		UE_LOG(LogTemp, Error, TEXT("ShipSegmentManager::BeginPlay - ShipRef is null, how did we get here?"));
+	
 	
 	if (AbilitySystemComponent)
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);

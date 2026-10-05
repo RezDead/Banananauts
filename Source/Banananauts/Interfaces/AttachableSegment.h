@@ -24,4 +24,7 @@ class BANANANAUTS_API IAttachableSegment
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "AttachItem")
 	void AttachItem(AActor* Item);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "AttachItem")
+	void RemoveItem(AActor* Item);
 };

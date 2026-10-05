@@ -79,6 +79,9 @@ private:
 	float MaxMass = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
 	float MaxFuel = 0.0f;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true",
+		ToolTip = "Percentage chance of adhere status blocking pop-off"))
+	float AdhereStatusStrength = 0.0f;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
 	bool bIsFlying = false;
@@ -113,4 +116,9 @@ private:
 	
 	void Success();
 	void Failure();
+	
+	void PopOffEvent(const int NumPopOffs) const;
+	
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
+	void PopOffTester() const {PopOffEvent(3);}
 };

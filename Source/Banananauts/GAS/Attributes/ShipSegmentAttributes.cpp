@@ -11,6 +11,8 @@ UShipSegmentAttributes::UShipSegmentAttributes()
 	MaxHeatAblation = 0;
 	Bananas = 0;
 	MaxBananas = 0;
+	Stability = 0;
+	MaxStability = 0;
 }
 
 void UShipSegmentAttributes::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
