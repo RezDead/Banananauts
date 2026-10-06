@@ -6,19 +6,20 @@
 #include "Components/ChildActorComponent.h"
 #include "ShipSegmentManager.h"
 #include "Banananauts/GAS/Attributes/ShipAttributes.h"
+#include "Banananauts/Interfaces/ShipCommunication.h"
 #include "Banananauts/Ship/ShipRouter.h"
 #include "Banananauts/Structs/FuelComposition.h"
-#include "UObject/Object.h"
 #include "ShipManager.generated.h"
 
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 9/21/2026
+ * Last Edited: 10/4/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
-class BANANANAUTS_API AShipManager : public AActor, public IAbilitySystemInterface
+class BANANANAUTS_API AShipManager : public AActor, public IAbilitySystemInterface, public IShipCommunication,
+                                     public IGameplayTagAssetInterface
 {
 	GENERATED_BODY()
 	
@@ -32,8 +33,12 @@ public:
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
-	UFUNCTION(BlueprintCallable, Category = "Default|Management")
-	void InitiateFlight();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default")
+	FGameplayTagContainer GameplayTags;
+	virtual void GetOwnedGameplayTags(FGameplayTagContainer& OutContainer) const override
+	{ OutContainer = GameplayTags; }
+	
+	virtual void BeginFlightSequence_Implementation() override;
 	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	int GetBananaCount();
@@ -119,6 +124,8 @@ private:
 	
 	void PopOffEvent(const int NumPopOffs) const;
 	
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
+	void BeginFlight() {Execute_BeginFlightSequence(this);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void PopOffTester() const {PopOffEvent(3);}
 };

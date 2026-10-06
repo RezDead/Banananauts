@@ -37,6 +37,8 @@ void AItemBase::OnConstruction(const FTransform& Transform)
 
 	if (const FTRB_ItemInformation* ItemRow = ItemInfoDT->FindRow<FTRB_ItemInformation>(*GetClass()->GetName(), ContextString))
 	{
+		DisplayName = ItemRow->DisplayName;
+		GameplayTags = ItemRow->Tags;
 		ItemMesh->SetStaticMesh(ItemRow->Mesh);
 	}
 }
@@ -56,8 +58,6 @@ void AItemBase::BeginPlay()
 
 	if (const FTRB_ItemInformation* ItemRow = ItemInfoDT->FindRow<FTRB_ItemInformation>(*GetClass()->GetName(), ContextString))
 	{
-		DisplayName = ItemRow->DisplayName;
-		GameplayTags = ItemRow->Tags;
 		InitializeTypeTags(ItemRow->Type);
 		InitializeItemAttributes(ItemRow);
 		LogItemAttributeErrors(ItemRow);
