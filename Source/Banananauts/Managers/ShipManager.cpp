@@ -56,6 +56,8 @@ void AShipManager::Tick(const float DeltaTime)
 			SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
 			
 			Success();
+			
+			return;
 		}
 		
 		//Update position
@@ -64,8 +66,8 @@ void AShipManager::Tick(const float DeltaTime)
 		
 		ConsumeFuel(DeltaTime);
 		
-		if (Attributes->GetFuel() <= 0)
-			Failure();
+		// if (Attributes->GetFuel() <= 0)
+		// 	Failure();
 		
 	}
 }
@@ -114,8 +116,10 @@ void AShipManager::InitAttributes() const
 /**
  * Initiates the flight of the ship and all in-flight systems.
  */
-void AShipManager::InitiateFlight()
+void AShipManager::BeginFlightSequence_Implementation()
 {
+	IShipCommunication::BeginFlightSequence_Implementation();
+	
 	bIsFlying = true;
 	
 	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
