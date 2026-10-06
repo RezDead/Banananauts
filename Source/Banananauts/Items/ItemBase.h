@@ -27,17 +27,17 @@ public:
 	UAbilitySystemComponent* AbilitySystemComponent;
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tags")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default")
 	FGameplayTagContainer GameplayTags;
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& OutContainer) const override
 	{ OutContainer = GameplayTags; }
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Mesh")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Default")
 	UStaticMeshComponent* ItemMesh;
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "General")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
 	UDataTable* ItemInfoDT;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "General|Data")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Default|Data")
 	FName DisplayName;
 
 	virtual void OnConstruction(const FTransform& Transform) override;
