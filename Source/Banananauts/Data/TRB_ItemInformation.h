@@ -16,29 +16,29 @@ struct FTRB_ItemInformation : public FTableRowBase
 	GENERATED_BODY()
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Display Name")
-	FName DisplayName;
+	FName DisplayName = "";
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Model")
-	UStaticMesh* Mesh;
+	UStaticMesh* Mesh = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Type")
-	EItemTypes Type;
+	EItemTypes Type = EItemTypes::BoltOn;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Tags")
 	FGameplayTagContainer Tags;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mass")
-	float Mass;
+	float Mass = 0.0f;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Heat Ablation")
-	float HeatAblation;
+	float HeatAblation = 0.0f;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Min Heat")
-	float MinHeat;
+	float MinHeat = 0.0f;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Max Heat")
-	float MaxHeat;
+	float MaxHeat = 0.0f;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Stability")
-	float Stability;
+	float Stability = 0.0f;
 };

@@ -16,6 +16,12 @@ void AShipSegmentManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	ShipRef = GetParentActor();
+	
+	if (!ShipRef)
+		UE_LOG(LogTemp, Error, TEXT("ShipSegmentManager::BeginPlay - ShipRef is null, how did we get here?"));
+	
+	
 	if (AbilitySystemComponent)
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	
