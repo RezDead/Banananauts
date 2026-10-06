@@ -50,6 +50,8 @@ public:
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
+	UFUNCTION(BlueprintCallable, Category = "Items")
+	TArray<AActor*> GetAttachedItems() const;
 protected:
 	virtual void BeginPlay() override;
 
