@@ -115,7 +115,7 @@ private:
 	FTimerHandle TickHandle;
 	
 	UPROPERTY()
-	TMap<EShipSection, TObjectPtr<AShipSegmentManager>> Segments;
+	TMap<EShipSection, AShipSegmentManager*> Segments;
 	
 	void UpdateHeat() const;
 	void ConsumeFuel(const float& DeltaTime) const;
@@ -123,10 +123,10 @@ private:
 	void Success();
 	void Failure();
 	
-	void PopOffEvent(const EShipSection Category) const;
+	void PopOffEvent(const EShipSection Category, const int Amount) const;
 	
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void BeginFlight() {Execute_BeginFlightSequence(this);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
-	void PopOffTester() const {PopOffEvent(EShipSection::Whole);}
+	void PopOffTester() const {PopOffEvent(EShipSection::Whole, 1);}
 };

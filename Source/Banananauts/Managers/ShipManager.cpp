@@ -188,41 +188,39 @@ void AShipManager::TickSystems()
  */
 void AShipManager::UpdateHeat() const
 {
-	for (const TPair<EShipSection, TObjectPtr<AShipSegmentManager>>& SegmentPair : Segments)
+	for (const TPair<EShipSection, AShipSegmentManager*>& SegmentPair : Segments)
 	{
-		AShipSegmentManager* Segment = SegmentPair.Value.Get();
+		AShipSegmentManager* Segment = SegmentPair.Value;
 		if (!Segment)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Segment is null"));
 			continue;
 		}
+		
 		UAbilitySystemComponent* ASC = Segment->GetAbilitySystemComponent();
+		if (!ASC)
 		{
-			UAbilitySystemComponent* ASC = Segment->GetAbilitySystemComponent();
-			if (!ASC)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Segment has no ASC"));
-				continue;
-			}
-			const float HeatMult = UShipStatsUtility::CalculateHeatMult(Segment);
-		
-			const FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
-			FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(
-				UEModifyHeat::StaticClass(),
-				1.0f,
-				ContextHandle
-			);
-		
-			const FGameplayTag MagTag = FGameplayTag::RequestGameplayTag(FName("Data.Magnitude"));
-			if (!MagTag.IsValid())
-			{
-				UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Invalid magnitude tag"));
-				continue;
-			}
-		
-			SpecHandle.Data.Get()->SetSetByCallerMagnitude(MagTag, BaseHeatGainPerTick * HeatMult);
-			ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Segment has no ASC"));
+			continue;
 		}
+		const float HeatMult = UShipStatsUtility::CalculateHeatMult(Segment);
+	
+		const FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
+		FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(
+			UEModifyHeat::StaticClass(),
+			1.0f,
+			ContextHandle
+		);
+	
+		const FGameplayTag MagTag = FGameplayTag::RequestGameplayTag(FName("Data.Magnitude"));
+		if (!MagTag.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Invalid magnitude tag"));
+			continue;
+		}
+	
+		SpecHandle.Data.Get()->SetSetByCallerMagnitude(MagTag, BaseHeatGainPerTick * HeatMult);
+		ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	}
 }
 
@@ -288,57 +286,7 @@ void AShipManager::Failure()
 	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
 }
 
-void AShipManager::PopOffEvent(const EShipSection Category) const
+void AShipManager::PopOffEvent(const EShipSection Category, const int Amount) const
 {
-	TArray<AActor*> AttachedItems;
-	
-	AttachedItems.Append(Nose->GetAttachedItems());
-	AttachedItems.Append(Body->GetAttachedItems());
-	AttachedItems.Append(Tail->GetAttachedItems());
-	
-	for (int i = 0; i < NumPopOffs; i++)
-	{
-		if (AttachedItems.Num() == 0)
-			break;
-		
-		const int RandomSelected = FMath::RandHelper(AttachedItems.Num());
-
-		AActor* SelectedItem = AttachedItems[RandomSelected];
-		AttachedItems.RemoveAt(RandomSelected);
-
-		UAbilitySystemComponent* ItemASC = nullptr;
-
-		if (const IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(SelectedItem))
-		{
-			ItemASC = ASCInterface->GetAbilitySystemComponent();
-		}
-		else 
-		{ 
-			UE_LOG(LogTemp, Error, TEXT("ShipManager::PopOffEvent - Removed Item does not have an AbilitySystemInterface")); 
-			continue;
-		}
-		
-		//Rand Check if > Stability
-		if (FMath::RandRange(0.0f, 100.0f) > ItemASC->GetNumericAttribute(UItemStability::GetStabilityAttribute()))
-		{
-			//Adhere Handling
-			if (ItemASC->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Status.Adhered"))))
-			{
-				ItemASC->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag(FName("Status.Adhered")));
-				if (FMath::RandRange(0.0f, 100.0f) < AdhereStatusStrength)
-					continue;
-			}
-			
-			if (AActor* Segment = SelectedItem->GetAttachParentActor(); Segment->Implements<UAttachableSegment>())
-			{
-				IAttachableSegment::Execute_RemoveItem(Segment, SelectedItem);
-				//UE_LOG(LogTemp, Display, TEXT("ShipManager::PopOffEvent - Item %d popped off"), i);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("ShipManager::PopOffEvent - Removed Item is not attached to a segment"));
-				continue;
-			}
-		}
-	}
+	UShipStatsUtility::PopOffEvent(Category, Segments, Amount);
 }
