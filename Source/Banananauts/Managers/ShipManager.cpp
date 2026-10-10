@@ -99,7 +99,9 @@ void AShipManager::InitSegments()
 		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to initialize ship segments. Make sure these are spawned in and attached to the ship via editor."));
 	}
 	
-	Segments.Add(Nose); Segments.Add(Body); Segments.Add(Tail);
+	Segments.Add(EShipSection::Nose, Nose);
+	Segments.Add(EShipSection::Body, Body);
+	Segments.Add(EShipSection::Tail, Tail);
 }
 
 /**
@@ -186,32 +188,41 @@ void AShipManager::TickSystems()
  */
 void AShipManager::UpdateHeat() const
 {
-	for (const auto Segment : Segments)
+	for (const TPair<EShipSection, TObjectPtr<AShipSegmentManager>>& SegmentPair : Segments)
 	{
+		AShipSegmentManager* Segment = SegmentPair.Value.Get();
+		if (!Segment)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Segment is null"));
+			continue;
+		}
 		UAbilitySystemComponent* ASC = Segment->GetAbilitySystemComponent();
-		if (!ASC)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Segment has no ASC"));
-			continue;
+			UAbilitySystemComponent* ASC = Segment->GetAbilitySystemComponent();
+			if (!ASC)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Segment has no ASC"));
+				continue;
+			}
+			const float HeatMult = UShipStatsUtility::CalculateHeatMult(Segment);
+		
+			const FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
+			FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(
+				UEModifyHeat::StaticClass(),
+				1.0f,
+				ContextHandle
+			);
+		
+			const FGameplayTag MagTag = FGameplayTag::RequestGameplayTag(FName("Data.Magnitude"));
+			if (!MagTag.IsValid())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Invalid magnitude tag"));
+				continue;
+			}
+		
+			SpecHandle.Data.Get()->SetSetByCallerMagnitude(MagTag, BaseHeatGainPerTick * HeatMult);
+			ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 		}
-		const float HeatMult = UShipStatsUtility::CalculateHeatMult(Segment);
-		
-		const FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
-		FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(
-			UEModifyHeat::StaticClass(),
-			1.0f,
-			ContextHandle
-		);
-		
-		const FGameplayTag MagTag = FGameplayTag::RequestGameplayTag(FName("Data.Magnitude"));
-		if (!MagTag.IsValid())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ShipManager::UpdateHeat - Invalid magnitude tag"));
-			continue;
-		}
-		
-		SpecHandle.Data.Get()->SetSetByCallerMagnitude(MagTag, BaseHeatGainPerTick * HeatMult);
-		ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	}
 }
 
@@ -277,12 +288,7 @@ void AShipManager::Failure()
 	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
 }
 
-/**
- * Attempts pop off of a given number of items from the ship based on their stability and adhered status.
- * 
- * @param NumPopOffs Number of items to attempt pop off.
- */
-void AShipManager::PopOffEvent(const int NumPopOffs) const
+void AShipManager::PopOffEvent(const EShipSection Category) const
 {
 	TArray<AActor*> AttachedItems;
 	

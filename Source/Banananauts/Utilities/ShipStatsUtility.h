@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Banananauts/Enums/ShipSection.h"
 #include "Banananauts/Managers/ShipSegmentManager.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "ShipStatsUtility.generated.h"
@@ -20,13 +21,15 @@ class BANANANAUTS_API UShipStatsUtility : public UBlueprintFunctionLibrary
 	
 public:
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static int GetBananaCount(const TArray<AShipSegmentManager*>& Segments);
+	static int GetBananaCount(const TMap<EShipSection, TObjectPtr<AShipSegmentManager>>& Segments);
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static float GetBananaCapacity(const TArray<AShipSegmentManager*>& Segments);
+	static float GetBananaCapacity(const TMap<EShipSection, TObjectPtr<AShipSegmentManager>>& Segments);
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static bool UseBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments);
+	static bool UseBananas(int& Amount, const TMap<EShipSection, TObjectPtr<AShipSegmentManager>>& Segments);
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static bool AddBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments);
+	static bool AddBananas(int& Amount, const TMap<EShipSection, TObjectPtr<AShipSegmentManager>>& Segments);
+	
+	static void PopOffEvent(const EShipSection Segment, const TMap<EShipSection, TObjectPtr<AShipSegmentManager>>& Segments);
 	
 	static 	TSoftObjectPtr<UWorld> GetRandomLevel(const UDataTable* LevelsDT);
 	
@@ -39,4 +42,5 @@ private:
 	static bool RemoveBananaHelper(int& Amount, AShipSegmentManager* Segment);
 	static bool AddBananaHelper(int& Amount, AShipSegmentManager* Segment);
 	
+	static void PopOffItem(TArray<AActor*>& AttachedItems);
 };
