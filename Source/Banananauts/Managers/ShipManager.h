@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ChildActorComponent.h"
 #include "ShipSegmentManager.h"
+#include "Banananauts/Enums/ShipSection.h"
 #include "Banananauts/GAS/Attributes/ShipAttributes.h"
 #include "Banananauts/Interfaces/ShipCommunication.h"
 #include "Banananauts/Ship/ShipRouter.h"
@@ -114,7 +115,7 @@ private:
 	FTimerHandle TickHandle;
 	
 	UPROPERTY()
-	TArray<TObjectPtr<AShipSegmentManager>> Segments;
+	TMap<EShipSection, AShipSegmentManager*> Segments;
 	
 	void UpdateHeat() const;
 	void ConsumeFuel(const float& DeltaTime) const;
@@ -122,10 +123,10 @@ private:
 	void Success();
 	void Failure();
 	
-	void PopOffEvent(const int NumPopOffs) const;
+	void PopOffEvent(const EShipSection Category, const int Amount) const;
 	
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void BeginFlight() {Execute_BeginFlightSequence(this);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
-	void PopOffTester() const {PopOffEvent(3);}
+	void PopOffTester() const {PopOffEvent(EShipSection::Whole, 1);}
 };
