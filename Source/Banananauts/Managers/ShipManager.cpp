@@ -38,6 +38,8 @@ AShipManager::AShipManager()
 	MinWarning = 60.0f;
 	MaxWarning = 100.0f;
 	
+	DefineStateTransitions();
+	
 	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
 	SetRootComponent(RootSceneComponent);
 		
@@ -129,7 +131,7 @@ void AShipManager::SetupAttributeListeners()
 
 void AShipManager::OnFuelChanged(const FOnAttributeChangeData& Data)
 {
-
+	
 }
 
 void AShipManager::OnHeatChanged(const FOnAttributeChangeData& Data)
@@ -339,6 +341,50 @@ void AShipManager::Failure()
 	}
 	
 	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
+}
+
+/**
+ * Defines the state transitions for the ship status. Registers transition functions for each valid state-to-state transition
+ * in the TransitionRegistry. Each transition function is associated with a specific pair of starting and destination statuses.
+ */
+void AShipManager::DefineStateTransitions()
+{
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Clear, EShipStatus::Warning), [this]() {
+		OnClearToWarning();
+	});
+	
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Warning, EShipStatus::Fail), [this]()
+	{
+		OnWarningToFail();
+	});
+	
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Fail, EShipStatus::Warning), [this]()
+	{
+		OnFailToWarning();
+	});
+	
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Warning, EShipStatus::Clear), [this]()
+	{
+		OnWarningToClear();
+	});
+}
+
+void AShipManager::UpdateStatus(const EShipStatus NewStatus)
+{
+	const FTransitionKey Key = GetTransitionKey(Status, NewStatus);
+
+	// Check if illegal state swap
+	if (!TransitionRegistry.Contains(Key))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid status swap attempted from %d to %d"), (int32)Status, (int32)NewStatus);
+		return;
+	}
+	
+	// Execute the code mapped to this path
+	TransitionRegistry[Key]();
+
+	// Commit status swap
+	Status = NewStatus;
 }
 
 void AShipManager::BeginRandomEventTimer()

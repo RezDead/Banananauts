@@ -16,7 +16,7 @@
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 10/4/2026
+ * Last Edited: 10/12/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
@@ -34,7 +34,7 @@ public:
 	UShipAttributes* Attributes;
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default")
 	FGameplayTagContainer GameplayTags;
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& OutContainer) const override
@@ -98,7 +98,6 @@ protected:
 	void OnHeatChanged(const FOnAttributeChangeData& Data);
 	void OnStabilityChanged(const FOnAttributeChangeData& Data);
 	
-	
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
 	bool bIsFlying = false;
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
@@ -116,8 +115,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Stats")
 	FFuelComposition FuelComposition;
 	
-	bool bIsChangingLevel = false;
-	
 	void InitSegments();
 	void InitAttributes() const;
 	
@@ -130,11 +127,39 @@ protected:
 	void UpdateHeat() const;
 	void ConsumeFuel(const float& DeltaTime) const;
 	
+	/*
+	 * Win/Fail
+	 */
+	
 	void Success();
 	void Failure();
 	
+	bool bIsChangingLevel = false;
+	
+	/*
+	 * Status
+	 */
+	
+	// A custom key combining (FromStatus << 8 | ToStatus) to map transitions efficiently
+	typedef uint16 FTransitionKey;
+	TMap<FTransitionKey, TFunction<void()>> TransitionRegistry;
+
+	// Helper to generate unique key
+	static FTransitionKey GetTransitionKey(EShipStatus From, EShipStatus To)
+	{return (static_cast<uint16>(From) << 8) | static_cast<uint16>(To);}
+	
+	void DefineStateTransitions();
+	
+	//Transition specific functions
+	void OnClearToWarning();
+	void OnWarningToFail();
+	void OnFailToWarning();
+	void OnWarningToClear();
+	
 	UPROPERTY(BlueprintReadOnly, Category = "Default")
 	EShipStatus Status;
+	
+	void UpdateStatus(EShipStatus NewStatus);
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Status")
 	float StabilityThreshold;
@@ -142,6 +167,10 @@ protected:
 	float FuelThreshold;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Status")
 	float HeatThreshold;
+	
+	/*
+	 * Events
+	 */
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MinFirstEvent;
