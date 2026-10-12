@@ -89,6 +89,16 @@ protected:
 		meta = (ToolTip = "Percentage chance of adhere status blocking pop-off"))
 	float AdhereStatusStrength = 0.0f;
 	
+	void SetupAttributeListeners();
+	FDelegateHandle FuelListener;
+	TMap<EShipSection, FDelegateHandle> HeatListeners;
+	TMap<EShipSection, FDelegateHandle> StabilityListeners;
+	
+	void OnFuelChanged(const FOnAttributeChangeData& Data);
+	void OnHeatChanged(const FOnAttributeChangeData& Data);
+	void OnStabilityChanged(const FOnAttributeChangeData& Data);
+	
+	
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
 	bool bIsFlying = false;
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
@@ -122,6 +132,16 @@ protected:
 	
 	void Success();
 	void Failure();
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Default")
+	EShipStatus Status;
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Status")
+	float StabilityThreshold;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Status")
+	float FuelThreshold;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Status")
+	float HeatThreshold;
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MinFirstEvent;

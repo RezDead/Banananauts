@@ -25,6 +25,12 @@ AShipManager::AShipManager()
 	MaxFuel = 0.0f;
 	AdhereStatusStrength = 5.0f;
 	
+	Status = EShipStatus::Clear;
+	
+	FuelThreshold = 1.0f/3.0f;
+	StabilityThreshold = 0;
+	HeatThreshold = 1.0f/3.0f;
+	
 	MinFirstEvent = 12.0f;
 	MaxFirstEvent = 50.0f;
 	MinClear = 35.0f;
@@ -90,6 +96,48 @@ void AShipManager::BeginPlay()
 	
 	InitAttributes();
 
+}
+
+void AShipManager::SetupAttributeListeners()
+{
+	if (!AbilitySystemComponent || !Nose || !Body || !Tail)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ShipManager::SetupAttributeListeners - ASC, Nose, Body, or Tail is null"));
+		return;
+	}
+	
+	UAbilitySystemComponent* NoseASC = Nose->GetAbilitySystemComponent();
+	UAbilitySystemComponent* BodyASC = Body->GetAbilitySystemComponent();
+	UAbilitySystemComponent* TailASC = Tail->GetAbilitySystemComponent();
+	
+	if (!NoseASC || !BodyASC || !TailASC)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ShipManager::SetupAttributeListeners - Nose, Body, or Tail ASC is null"));
+		return;
+	}
+	
+	FuelListener = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UShipAttributes::GetFuelAttribute()).AddUObject(this, &AShipManager::OnFuelChanged);
+	
+	HeatListeners.Add(EShipSection::Nose, NoseASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetHeatAttribute()).AddUObject(this, &AShipManager::OnHeatChanged));
+	HeatListeners.Add(EShipSection::Body, BodyASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetHeatAttribute()).AddUObject(this, &AShipManager::OnHeatChanged));
+	HeatListeners.Add(EShipSection::Tail, TailASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetHeatAttribute()).AddUObject(this, &AShipManager::OnHeatChanged));
+	
+	StabilityListeners.Add(EShipSection::Nose, NoseASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetStabilityAttribute()).AddUObject(this, &AShipManager::OnStabilityChanged));
+	StabilityListeners.Add(EShipSection::Body, BodyASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetStabilityAttribute()).AddUObject(this, &AShipManager::OnStabilityChanged));
+	StabilityListeners.Add(EShipSection::Tail, TailASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetStabilityAttribute()).AddUObject(this, &AShipManager::OnStabilityChanged));
+}
+
+void AShipManager::OnFuelChanged(const FOnAttributeChangeData& Data)
+{
+
+}
+
+void AShipManager::OnHeatChanged(const FOnAttributeChangeData& Data)
+{
+}
+
+void AShipManager::OnStabilityChanged(const FOnAttributeChangeData& Data)
+{
 }
 
 /**
