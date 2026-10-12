@@ -6,6 +6,7 @@
 #include "Components/ChildActorComponent.h"
 #include "ShipSegmentManager.h"
 #include "Banananauts/Enums/ShipSection.h"
+#include "Banananauts/Enums/ShipStatus.h"
 #include "Banananauts/GAS/Attributes/ShipAttributes.h"
 #include "Banananauts/Interfaces/ShipCommunication.h"
 #include "Banananauts/Ship/ShipRouter.h"
@@ -77,33 +78,32 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USceneComponent* RootSceneComponent;
 	
-private:
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
 	UDataTable* LevelsDT;
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats")
 	float MaxMass = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats")
 	float MaxFuel = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true",
-		ToolTip = "Percentage chance of adhere status blocking pop-off"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats",
+		meta = (ToolTip = "Percentage chance of adhere status blocking pop-off"))
 	float AdhereStatusStrength = 0.0f;
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
 	bool bIsFlying = false;
-	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
 	TWeakObjectPtr<AShipRouter> ShipRouter = nullptr;
-	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
 	float ShipProgress = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight",
 		meta = (AllowPrivateAccess = "true", ToolTip = "The rate at which gallons of fuel is consumed per minute"))
 	float FuelBurnRate = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight")
 	float MinFlightTime = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight")
 	float FlightLinearGrowthRate = 0.0f;
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Default|Stats", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Stats")
 	FFuelComposition FuelComposition;
 	
 	bool bIsChangingLevel = false;
@@ -123,17 +123,17 @@ private:
 	void Success();
 	void Failure();
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MinFirstEvent;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MaxFirstEvent;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MinClear;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MaxClear;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MinWarning;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MaxWarning;
 	
 	FTimerHandle RandomEventHandle;
