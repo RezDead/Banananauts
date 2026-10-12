@@ -25,6 +25,13 @@ AShipManager::AShipManager()
 	MaxFuel = 0.0f;
 	AdhereStatusStrength = 5.0f;
 	
+	MinFirstEvent = 12.0f;
+	MaxFirstEvent = 50.0f;
+	MinClear = 35.0f;
+	MaxClear = 60.0f;
+	MinWarning = 60.0f;
+	MaxWarning = 100.0f;
+	
 	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
 	SetRootComponent(RootSceneComponent);
 		
@@ -284,6 +291,17 @@ void AShipManager::Failure()
 	}
 	
 	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
+}
+
+void AShipManager::BeginRandomEventTimer()
+{
+	const float RandomTime = FMath::RandRange(MinFirstEvent, MaxFirstEvent);
+	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, RandomTime, false);
+}
+
+void AShipManager::RandomEvent()
+{
+	PopOffEvent(EShipSection::Whole, 1);
 }
 
 void AShipManager::PopOffEvent(const EShipSection Category, const int Amount) const

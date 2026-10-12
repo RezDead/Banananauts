@@ -123,6 +123,23 @@ private:
 	void Success();
 	void Failure();
 	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	float MinFirstEvent;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	float MaxFirstEvent;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	float MinClear;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	float MaxClear;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	float MinWarning;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events", meta = (AllowPrivateAccess = "true"))
+	float MaxWarning;
+	
+	FTimerHandle RandomEventHandle;
+	void BeginRandomEventTimer();
+	void RandomEvent();
+	
 	void PopOffEvent(const EShipSection Category, const int Amount) const;
 	
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
