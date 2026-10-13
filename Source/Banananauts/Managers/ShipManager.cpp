@@ -28,7 +28,7 @@ AShipManager::AShipManager()
 	Status = EShipStatus::Clear;
 	
 	FuelThreshold = 1.0f/3.0f;
-	StabilityThreshold = 0;
+	StabilityThreshold = 0.0f;
 	HeatThreshold = 1.0f/3.0f;
 	
 	MinFirstEvent = 12.0f;
@@ -193,9 +193,15 @@ void AShipManager::BeginPlay()
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	
 	InitAttributes();
+	
+	SetupAttributeListeners();
 
+	UpdateStatus();
 }
 
+/**
+ * Sets up attribute listeners for both the ship and ship segments.
+ */
 void AShipManager::SetupAttributeListeners()
 {
 	if (!AbilitySystemComponent || !Nose || !Body || !Tail)
@@ -446,8 +452,13 @@ void AShipManager::OnFailToWarning()
 	
 }
 
+/**
+ * Attempts to swap from one status to another, activating any logic that should occur.
+ * @param NewStatus Status to swap to.
+ */
 void AShipManager::SetStatus(const EShipStatus NewStatus)
 {
+	UE_LOG(LogTemp, Warning, TEXT("ShipManager::SetStatus - Attempting to swap from %d to %d"), (int32)Status, (int32)NewStatus);
 	if (Status == NewStatus) return;
 	
 	const FTransitionKey Key = GetTransitionKey(Status, NewStatus);
@@ -464,6 +475,8 @@ void AShipManager::SetStatus(const EShipStatus NewStatus)
 
 	// Commit status swap
 	Status = NewStatus;
+	
+	UE_LOG(LogTemp, Error, TEXT("ShipManager::SetStatus - Status changed from %d to %d"), (int32)Status, (int32)NewStatus);
 }
 
 /**
@@ -502,11 +515,16 @@ void AShipManager::UpdateStatus()
  */
 bool AShipManager::CheckAttributeStatus() const
 {
-	const float HeatPercent = GetHeat() / GetMaxHeat();
-	const float StabilityPercent = GetStability() / GetMaxStability();
-	const float FuelPercent = Attributes->GetFuel() / Attributes->GetMaxFuel();
+	float lMaxHeat = GetMaxHeat();
+	float HeatPercent = lMaxHeat > 0 ? GetHeat() / lMaxHeat : 0.0f;
 	
-	if (HeatPercent <= HeatThreshold || StabilityPercent >= StabilityThreshold || FuelPercent <= FuelThreshold)
+	float lMaxStability = GetMaxStability();
+	float StabilityPercent = lMaxStability > 0 ? GetStability() / lMaxStability : 0.0f;
+	
+	float lMaxFuel = Attributes->GetMaxFuel();
+	float FuelPercent = lMaxFuel > 0 ? Attributes->GetFuel() / lMaxFuel : 0.0f;
+	
+	if (HeatPercent <= HeatThreshold && StabilityPercent > StabilityThreshold && FuelPercent <= FuelThreshold)
 	{
 		return true;
 	}
