@@ -4,20 +4,27 @@
 #include "ShipStatsUtility.h"
 
 #include "Banananauts/Data/TRB_Levels.h"
+#include "Banananauts/GAS/Attributes/Items/ItemStability.h"
 #include "Banananauts/GAS/Effects/EModifyBananas.h"
 
 
 /**
  * Get the total count of all bananas on the ship.
  * 
- * @param Segments Array of ship segments.
+ * @param Segments Map of ship section types to segment instances.
  * @return Total count of bananas on the ship.
  */
-int UShipStatsUtility::GetBananaCount(const TArray<AShipSegmentManager*>& Segments)
+int UShipStatsUtility::GetBananaCount(const TMap<EShipSection, AShipSegmentManager*>& Segments)
 {
 	int Total = 0;
-	for (const AShipSegmentManager* Segment : Segments)
+	for (const TPair<EShipSection, AShipSegmentManager*>& SegmentPair : Segments)
 	{
+		const AShipSegmentManager* Segment = SegmentPair.Value;
+		if (!Segment)
+		{
+			continue;
+		}
+
 		Total += Segment->GetAbilitySystemComponent()->GetNumericAttribute(UShipSegmentAttributes::GetBananasAttribute());
 	}
 	return Total;
@@ -26,14 +33,20 @@ int UShipStatsUtility::GetBananaCount(const TArray<AShipSegmentManager*>& Segmen
 /**
  * Get the total capacity of all bananas on the ship.
  * 
- * @param Segments Array of ship segments.
+ * @param Segments Map of ship section types to segment instances.
  * @return Total capacity of bananas on the ship.
  */
-float UShipStatsUtility::GetBananaCapacity(const TArray<AShipSegmentManager*>& Segments)
+float UShipStatsUtility::GetBananaCapacity(const TMap<EShipSection, AShipSegmentManager*>& Segments)
 {
 	float Total = 0;
-	for (const AShipSegmentManager* Segment : Segments)
+	for (const TPair<EShipSection, AShipSegmentManager*>& SegmentPair : Segments)
 	{
+		const AShipSegmentManager* Segment = SegmentPair.Value;
+		if (!Segment)
+		{
+			continue;
+		}
+
 		Total += Segment->GetAbilitySystemComponent()->GetNumericAttribute(UShipSegmentAttributes::GetMaxBananasAttribute());
 	}
 	return Total;
@@ -43,19 +56,23 @@ float UShipStatsUtility::GetBananaCapacity(const TArray<AShipSegmentManager*>& S
  * Use bananas from the ship and its segments if available.
  * 
  * @param Amount Number of bananas to use. Must be greater than 0.
- * @param Segments Array of ship segments.
+ * @param Segments Map of ship section types to segment instances.
  * @return True if the operation was successful, false if bananas are insufficient or invalid amount.
  */
-bool UShipStatsUtility::UseBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments)
+bool UShipStatsUtility::UseBananas(int& Amount, const TMap<EShipSection, AShipSegmentManager*>& Segments)
 {
 	if (Amount <= 0) {return false;}
 	if (GetBananaCount(Segments) < Amount){return false;}
 	
-	int i = 0;
-	while (Amount != 0 && i < Segments.Num())
+	for (const TPair<EShipSection, AShipSegmentManager*>& SegmentPair : Segments)
 	{
-		if (RemoveBananaHelper(Amount, Segments[i])) {return true;}
-		i++;
+		AShipSegmentManager* Segment = SegmentPair.Value;
+		if (!Segment)
+		{
+			continue;
+		}
+
+		if (RemoveBananaHelper(Amount, Segment)) {return true;}
 	}
 	return false;
 }
@@ -64,21 +81,84 @@ bool UShipStatsUtility::UseBananas(int& Amount, const TArray<AShipSegmentManager
  * Try to add bananas to the ship and its segments if you can add.
  * 
  * @param Amount Number of bananas to add. Must be greater than 0.
- * @param Segments Array of ship segments.
+ * @param Segments Map of ship section types to segment instances.
  * @return True if the operation was successful, false if bananas are full or invalid amount added.
  */
-bool UShipStatsUtility::AddBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments)
+bool UShipStatsUtility::AddBananas(int& Amount, const TMap<EShipSection, AShipSegmentManager*>& Segments)
 {
 	if (Amount <= 0) {return false;}
 	if (GetBananaCount(Segments) >= GetBananaCapacity(Segments)){return false;}
 	
-	int i = 0;
-	while (Amount != 0 && i < Segments.Num())
+	for (const TPair<EShipSection, AShipSegmentManager*>& SegmentPair : Segments)
 	{
-		if (AddBananaHelper(Amount, Segments[i])) {return true;}
-		i++;
+		AShipSegmentManager* Segment = SegmentPair.Value;
+		if (!Segment)
+		{
+			continue;
+		}
+
+		if (AddBananaHelper(Amount, Segment)) {return true;}
 	}
 	return false;
+}
+
+/**
+ * Pop off a specified number of random items from a designated ship section.
+ * 
+ * @param Section Section of the ship to pop off.
+ * @param Segments Map of ship segment references.
+ * @param Amount Number of items to pop off.
+ */
+void UShipStatsUtility::PopOffEvent(const EShipSection Section, const TMap<EShipSection, AShipSegmentManager*>& Segments, const int Amount)
+{
+	if (Amount <= 0 || Segments.Num() <= 0)
+	{
+		return;
+	}
+	
+	TArray<AActor*> AttachedItems;
+	
+	switch (Section)
+	{
+	case EShipSection::Whole:
+		if (Segments.Find(EShipSection::Nose))
+			AttachedItems.Append(Segments[EShipSection::Nose]->GetAttachedItems());
+		if (Segments.Find(EShipSection::Body))
+			AttachedItems.Append(Segments[EShipSection::Body]->GetAttachedItems());
+		if (Segments.Find(EShipSection::Tail))
+			AttachedItems.Append(Segments[EShipSection::Tail]->GetAttachedItems());
+		break;
+	case EShipSection::Nose:
+		if (Segments.Find(EShipSection::Nose))
+			AttachedItems.Append(Segments[EShipSection::Nose]->GetAttachedItems());
+		break;
+	case EShipSection::Body:
+		if (Segments.Find(EShipSection::Body))
+			AttachedItems.Append(Segments[EShipSection::Body]->GetAttachedItems());
+		break;
+	case EShipSection::Tail:
+		if (Segments.Find(EShipSection::Tail))
+			AttachedItems.Append(Segments[EShipSection::Tail]->GetAttachedItems());
+		break;
+	}
+	
+	AttachedItems.RemoveAll([](const AActor* Item)
+	{
+		return !IsValid(Item);
+	});
+	
+	if (AttachedItems.Num() <= 0) {return;}
+	
+	TArray<float> Weight;
+	float TotalWeight = 0;
+	
+	CalculateWeightFromAttachedItems(AttachedItems, Weight, TotalWeight);
+	
+	for (int i = 0; i < Amount; i++)
+	{
+		if (TotalWeight <= 0 || AttachedItems.Num() <= 0) {break;}
+		PopOffItem(AttachedItems, TotalWeight, Weight);
+	}
 }
 
 TSoftObjectPtr<UWorld> UShipStatsUtility::GetRandomLevel(const UDataTable* LevelsDT)
@@ -162,6 +242,82 @@ bool UShipStatsUtility::AddBananaHelper(int& Amount, AShipSegmentManager* Segmen
 	SpecHandle.Data.Get()->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Data.Magnitude")), Amount);
 	ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	return true;
+}
+
+/**
+ * Calculates the probability weight of items based on their stability.
+ * 
+ * @param AttachedItems Items attached to the ship.
+ * @param Weight An empty array to store the calculated weights in.
+ * @param TotalWeight A reference to the total weight of all items.
+ */
+void UShipStatsUtility::CalculateWeightFromAttachedItems(const TArray<AActor*>& AttachedItems, TArray<float>& Weight, float& TotalWeight)
+{
+	for (int i = 0; i < AttachedItems.Num(); i++)
+	{
+		if (const IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(AttachedItems[i]))
+		{
+			const UAbilitySystemComponent* ItemASC = ASCInterface->GetAbilitySystemComponent();
+			
+			if (!ItemASC) {Weight.Add(0.0f); continue;}
+			
+			const float ItemWeight = FMath::Max(0.0f,100 - ItemASC->GetNumericAttribute(UItemStability::GetStabilityAttribute()));
+			Weight.Add(ItemWeight);
+			TotalWeight += ItemWeight;
+			continue;
+		}
+		
+		UE_LOG(LogTemp, Warning, TEXT("ShipStatsUtility::PopOffItem - Failed to get ASC from actor %s"), *AttachedItems[i]->GetName());
+		Weight.Add(0.0f);
+	}
+}
+
+/**
+ * Pops off a randomly selected item based on weighted probability.
+ * 
+ * @param AttachedItems Array of items attached to the ship, updated upon pop off.
+ * @param TotalWeight Current total weighting of items, updated upon pop off.
+ * @param Weight Array of item weights in the same order as attached items, updated upon pop off.
+ */
+void UShipStatsUtility::PopOffItem(TArray<AActor*>& AttachedItems, float& TotalWeight, TArray<float>& Weight)
+{
+	if (AttachedItems.Num() == 0 || Weight.Num() != AttachedItems.Num() || TotalWeight <= 0.0f)
+	{
+		return;
+	}
+	
+	float CurrentWeight = 0;
+	const float TargetWeight = FMath::FRandRange(0.0f, TotalWeight);
+	
+	for (int i = 0; i < AttachedItems.Num(); i++)
+	{
+		if (Weight[i] <= 0) {continue;}
+		CurrentWeight += Weight[i];
+		
+		if (CurrentWeight >= TargetWeight)
+		{
+			if (AActor* Segment = AttachedItems[i]->GetAttachParentActor())
+			{
+				if (Segment->Implements<UAttachableSegment>())
+				{
+					IAttachableSegment::Execute_RemoveItem(Segment, AttachedItems[i]);
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("UShipStatsUtility::PopOffItem - Removed Item is not attached to a segment"));
+			}
+			
+			//Remove Current Item from values
+			TotalWeight -= Weight[i];
+			Weight[i] = Weight[Weight.Num() - 1];
+			AttachedItems[i] = AttachedItems[AttachedItems.Num() - 1];
+			Weight.Pop();
+			AttachedItems.Pop();
+			
+			break;
+		}
+	}
 }
 
 /**

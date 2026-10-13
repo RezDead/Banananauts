@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Banananauts/Enums/ShipSection.h"
 #include "Banananauts/Managers/ShipSegmentManager.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "ShipStatsUtility.generated.h"
@@ -10,7 +11,7 @@
 /**
  * Utility class for calculating ship stats/data and certain functions.
  * 
- * Last Edited: 9/21/2026
+ * Last Edited: 10/9/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -20,13 +21,16 @@ class BANANANAUTS_API UShipStatsUtility : public UBlueprintFunctionLibrary
 	
 public:
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static int GetBananaCount(const TArray<AShipSegmentManager*>& Segments);
+	static int GetBananaCount(const TMap<EShipSection, AShipSegmentManager*>& Segments);
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static float GetBananaCapacity(const TArray<AShipSegmentManager*>& Segments);
+	static float GetBananaCapacity(const TMap<EShipSection, AShipSegmentManager*>& Segments);
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static bool UseBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments);
+	static bool UseBananas(int& Amount, const TMap<EShipSection, AShipSegmentManager*>& Segments);
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static bool AddBananas(int& Amount, const TArray<AShipSegmentManager*>& Segments);
+	static bool AddBananas(int& Amount, const TMap<EShipSection, AShipSegmentManager*>& Segments);
+
+	static void PopOffEvent(const EShipSection Section,
+	                        const TMap<EShipSection, AShipSegmentManager*>& Segments, const int Amount);
 	
 	static 	TSoftObjectPtr<UWorld> GetRandomLevel(const UDataTable* LevelsDT);
 	
@@ -39,4 +43,7 @@ private:
 	static bool RemoveBananaHelper(int& Amount, AShipSegmentManager* Segment);
 	static bool AddBananaHelper(int& Amount, AShipSegmentManager* Segment);
 	
+	static void PopOffItem(TArray<AActor*>& AttachedItems, float& TotalWeight, TArray<float>& Weight);
+	static void CalculateWeightFromAttachedItems(const TArray<AActor*>& AttachedItems, TArray<float>& Weight,
+											 float& TotalWeight);
 };
