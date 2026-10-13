@@ -7,47 +7,26 @@
 #include "Banananauts/GAS/Attributes/Items/ItemStability.h"
 #include "Banananauts/GAS/Effects/EModifyBananas.h"
 
-
 /**
- * Get the total count of all bananas on the ship.
+ * Gets the total value of all of a ship segment attribute
  * 
- * @param Segments Map of ship section types to segment instances.
- * @return Total count of bananas on the ship.
+ * @param Attribute Attribute to get the total of
+ * @param Segments Map of segments
+ * @return Total value of the attributes
  */
-int UShipStatsUtility::GetBananaCount(const TMap<EShipSection, AShipSegmentManager*>& Segments)
-{
-	int Total = 0;
-	for (const TPair<EShipSection, AShipSegmentManager*>& SegmentPair : Segments)
-	{
-		const AShipSegmentManager* Segment = SegmentPair.Value;
-		if (!Segment)
-		{
-			continue;
-		}
-
-		Total += Segment->GetAbilitySystemComponent()->GetNumericAttribute(UShipSegmentAttributes::GetBananasAttribute());
-	}
-	return Total;
-}
-
-/**
- * Get the total capacity of all bananas on the ship.
- * 
- * @param Segments Map of ship section types to segment instances.
- * @return Total capacity of bananas on the ship.
- */
-float UShipStatsUtility::GetBananaCapacity(const TMap<EShipSection, AShipSegmentManager*>& Segments)
+float UShipStatsUtility::GetAttributeTotal(const FGameplayAttribute& Attribute,
+                                           const TMap<EShipSection, AShipSegmentManager*>& Segments)
 {
 	float Total = 0;
 	for (const TPair<EShipSection, AShipSegmentManager*>& SegmentPair : Segments)
 	{
 		const AShipSegmentManager* Segment = SegmentPair.Value;
-		if (!Segment)
-		{
-			continue;
-		}
-
-		Total += Segment->GetAbilitySystemComponent()->GetNumericAttribute(UShipSegmentAttributes::GetMaxBananasAttribute());
+		if (!Segment){continue;}
+		
+		UAbilitySystemComponent* ASC = Segment->GetAbilitySystemComponent();
+		if (!ASC) {continue;}
+		
+		Total += ASC->GetNumericAttribute(Attribute);
 	}
 	return Total;
 }
@@ -62,7 +41,8 @@ float UShipStatsUtility::GetBananaCapacity(const TMap<EShipSection, AShipSegment
 bool UShipStatsUtility::UseBananas(int& Amount, const TMap<EShipSection, AShipSegmentManager*>& Segments)
 {
 	if (Amount <= 0) {return false;}
-	if (GetBananaCount(Segments) < Amount){return false;}
+	//Banana Count < Amount
+	if (GetAttributeTotal(UShipSegmentAttributes::GetBananasAttribute(), Segments) < Amount){return false;}
 	
 	for (const TPair<EShipSection, AShipSegmentManager*>& SegmentPair : Segments)
 	{
@@ -87,7 +67,8 @@ bool UShipStatsUtility::UseBananas(int& Amount, const TMap<EShipSection, AShipSe
 bool UShipStatsUtility::AddBananas(int& Amount, const TMap<EShipSection, AShipSegmentManager*>& Segments)
 {
 	if (Amount <= 0) {return false;}
-	if (GetBananaCount(Segments) >= GetBananaCapacity(Segments)){return false;}
+	if (GetAttributeTotal(UShipSegmentAttributes::GetBananasAttribute(), Segments) >= GetAttributeTotal(
+		UShipSegmentAttributes::GetMaxBananasAttribute(), Segments)) { return false; }
 	
 	for (const TPair<EShipSection, AShipSegmentManager*>& SegmentPair : Segments)
 	{

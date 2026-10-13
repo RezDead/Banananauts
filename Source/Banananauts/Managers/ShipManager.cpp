@@ -55,6 +55,86 @@ AShipManager::AShipManager()
 	TailSegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
+/**
+ * Initiates the flight of the ship and all in-flight systems.
+ */
+void AShipManager::BeginFlightSequence_Implementation()
+{
+	IShipCommunication::BeginFlightSequence_Implementation();
+	
+	bIsFlying = true;
+	
+	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
+	if (!ShipRouter.IsValid())
+	{
+		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
+	}
+	
+	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
+}
+
+/**
+ * Calculates the number of bananas on the ship.
+ * 
+ * @return The number of bananas on the ship.
+ */
+int AShipManager::GetBananaCount()
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetBananasAttribute(), Segments);
+}
+
+/**
+ * Calculates the maximum number of bananas the ship can hold.
+ * 
+ * @return The maximum number of bananas the ship can hold.
+ */
+int AShipManager::GetBananaCapacity() const
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetBananasAttribute(), Segments);
+}
+
+/**
+ * Uses the specified number of bananas from the ship.
+ * 
+ * @param Amount The number of bananas to use. Must be greater than 0.
+ * @return True if the operation was successful, false otherwise.
+ */
+bool AShipManager::UseBananas(int Amount) const
+{
+	return UShipStatsUtility::UseBananas(Amount, Segments);
+}
+
+/**
+ * Adds the specified number of bananas to the ship.
+ * 
+ * @param Amount The number of bananas to add. Must be greater than 0.
+ * @return True if any bananas were added, false if already at capacity or invalid input.
+ */
+bool AShipManager::AddBananas(int Amount) const
+{
+	return UShipStatsUtility::AddBananas(Amount, Segments);
+}
+
+float AShipManager::GetHeat() const
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetHeatAttribute(), Segments);
+}
+
+float AShipManager::GetMaxHeat() const
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetMaxHeatAttribute(), Segments);
+}
+
+float AShipManager::GetStability() const
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetStabilityAttribute(), Segments);
+}
+
+float AShipManager::GetMaxStability() const
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetMaxStabilityAttribute(), Segments);
+}
+
 void AShipManager::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -63,7 +143,7 @@ void AShipManager::Tick(const float DeltaTime)
 	{
 		//Update ship progress
 		ShipProgress += UShipStatsUtility::CalculateShipProgressAdditive(Attributes->GetMass(), FuelComposition.Thrust,
-																	 MinFlightTime, FlightLinearGrowthRate, DeltaTime);
+		                                                                 MinFlightTime, FlightLinearGrowthRate, DeltaTime);
 		
 		if (ShipProgress >= 1)
 		{
@@ -170,66 +250,6 @@ void AShipManager::InitAttributes() const
 	Attributes->InitMaxMass(MaxMass);
 	Attributes->InitFuel(0.0f);
 	Attributes->InitMaxFuel(MaxFuel);
-}
-
-/**
- * Initiates the flight of the ship and all in-flight systems.
- */
-void AShipManager::BeginFlightSequence_Implementation()
-{
-	IShipCommunication::BeginFlightSequence_Implementation();
-	
-	bIsFlying = true;
-	
-	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
-	if (!ShipRouter.IsValid())
-	{
-		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
-	}
-	
-	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
-}
-
-/**
- * Calculates the number of bananas on the ship.
- * 
- * @return The number of bananas on the ship.
- */
-int AShipManager::GetBananaCount()
-{
-	return UShipStatsUtility::GetBananaCount(Segments);
-}
-
-/**
- * Calculates the maximum number of bananas the ship can hold.
- * 
- * @return The maximum number of bananas the ship can hold.
- */
-int AShipManager::GetBananaCapacity()
-{
-	return UShipStatsUtility::GetBananaCapacity(Segments);
-}
-
-/**
- * Uses the specified number of bananas from the ship.
- * 
- * @param Amount The number of bananas to use. Must be greater than 0.
- * @return True if the operation was successful, false otherwise.
- */
-bool AShipManager::UseBananas(int Amount)
-{
-	return UShipStatsUtility::UseBananas(Amount, Segments);
-}
-
-/**
- * Adds the specified number of bananas to the ship.
- * 
- * @param Amount The number of bananas to add. Must be greater than 0.
- * @return True if any bananas were added, false if already at capacity or invalid input.
- */
-bool AShipManager::AddBananas(int Amount)
-{
-	return UShipStatsUtility::AddBananas(Amount, Segments);
 }
 
 /**
@@ -353,24 +373,31 @@ void AShipManager::DefineStateTransitions()
 		OnClearToWarning();
 	});
 	
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Clear, EShipStatus::Fail), [this]()
+	{
+		OnClearToFail();
+	});
+	
 	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Warning, EShipStatus::Fail), [this]()
 	{
 		OnWarningToFail();
-	});
-	
-	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Fail, EShipStatus::Warning), [this]()
-	{
-		OnFailToWarning();
 	});
 	
 	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Warning, EShipStatus::Clear), [this]()
 	{
 		OnWarningToClear();
 	});
+	
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Fail, EShipStatus::Warning), [this]()
+	{
+		OnFailToWarning();
+	});
 }
 
 void AShipManager::UpdateStatus(const EShipStatus NewStatus)
 {
+	if (Status == NewStatus) return;
+	
 	const FTransitionKey Key = GetTransitionKey(Status, NewStatus);
 
 	// Check if illegal state swap
@@ -385,6 +412,11 @@ void AShipManager::UpdateStatus(const EShipStatus NewStatus)
 
 	// Commit status swap
 	Status = NewStatus;
+}
+
+void AShipManager::CheckAttributeStatus()
+{
+
 }
 
 void AShipManager::BeginRandomEventTimer()

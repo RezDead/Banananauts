@@ -45,11 +45,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	int GetBananaCount();
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
-	int GetBananaCapacity();
+	int GetBananaCapacity() const;
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
-	bool UseBananas(int Amount);
+	bool UseBananas(int Amount) const;
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
-	bool AddBananas(int Amount);
+	bool AddBananas(int Amount) const;
+	UFUNCTION(BlueprintCallable, Category = "Heat")
+	float GetHeat() const;
+	UFUNCTION(BlueprintCallable, Category = "Heat")
+	float GetMaxHeat() const;
+	UFUNCTION(BlueprintCallable, Category = "Stability")
+	float GetStability() const;
+	UFUNCTION(BlueprintCallable, Category = "Stability")
+	float GetMaxStability() const;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default|Segments")
 	TObjectPtr<UChildActorComponent> NoseSegmentComponent;
@@ -152,14 +160,16 @@ protected:
 	
 	//Transition specific functions
 	void OnClearToWarning();
+	void OnClearToFail();
+	void OnWarningToClear();
 	void OnWarningToFail();
 	void OnFailToWarning();
-	void OnWarningToClear();
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Default")
 	EShipStatus Status;
 	
 	void UpdateStatus(EShipStatus NewStatus);
+	void CheckAttributeStatus();
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Status")
 	float StabilityThreshold;
