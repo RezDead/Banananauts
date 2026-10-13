@@ -16,7 +16,7 @@
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 10/12/2026
+ * Last Edited: 10/13/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
@@ -28,36 +28,32 @@ class BANANANAUTS_API AShipManager : public AActor, public IAbilitySystemInterfa
 public:
 	AShipManager();
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
-	UAbilitySystemComponent* AbilitySystemComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
-	UShipAttributes* Attributes;
-	
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default")
-	FGameplayTagContainer GameplayTags;
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& OutContainer) const override
 	{ OutContainer = GameplayTags; }
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
 	virtual void BeginFlightSequence_Implementation() override;
 	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
-	int GetBananaCount();
-	UFUNCTION(BlueprintCallable, Category = "Bananas")
-	int GetBananaCapacity() const;
-	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	bool UseBananas(int Amount) const;
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	bool AddBananas(int Amount) const;
-	UFUNCTION(BlueprintCallable, Category = "Heat")
-	float GetHeat() const;
-	UFUNCTION(BlueprintCallable, Category = "Heat")
-	float GetMaxHeat() const;
-	UFUNCTION(BlueprintCallable, Category = "Stability")
-	float GetStability() const;
-	UFUNCTION(BlueprintCallable, Category = "Stability")
-	float GetMaxStability() const;
+	
+	virtual void Tick(float DeltaTime) override;
+	
+protected:
+	virtual void BeginPlay() override;
+	
+	/*
+	 * Actor Components
+	 */
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
+    UAbilitySystemComponent* AbilitySystemComponent;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
+    UShipAttributes* Attributes;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default")
+	FGameplayTagContainer GameplayTags;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default|Segments")
 	TObjectPtr<UChildActorComponent> NoseSegmentComponent;
@@ -73,18 +69,15 @@ public:
 	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, Category = "Default|Segments")
 	TObjectPtr<AShipSegmentManager> Tail;
 	
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default", meta = (ToolTip = "The rate in seconds at which ship systems tick"))
-	float SystemTickRate;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default|Stats", meta = (ToolTip = "The base amount of heat gained per tick before any modifiers"))
-	float BaseHeatGainPerTick;
-	
-	virtual void Tick(float DeltaTime) override;
-	
-protected:
-	virtual void BeginPlay() override;
+	UPROPERTY()
+	TMap<EShipSection, AShipSegmentManager*> Segments;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USceneComponent* RootSceneComponent;
+	
+	/*
+	 * Stats/Default Variables
+	 */
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
 	UDataTable* LevelsDT;
@@ -96,15 +89,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats",
 		meta = (ToolTip = "Percentage chance of adhere status blocking pop-off"))
 	float AdhereStatusStrength = 0.0f;
-	
-	void SetupAttributeListeners();
-	FDelegateHandle FuelListener;
-	TMap<EShipSection, FDelegateHandle> HeatListeners;
-	TMap<EShipSection, FDelegateHandle> StabilityListeners;
-	
-	void OnFuelChanged(const FOnAttributeChangeData& Data);
-	void OnHeatChanged(const FOnAttributeChangeData& Data);
-	void OnStabilityChanged(const FOnAttributeChangeData& Data);
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
 	bool bIsFlying = false;
@@ -123,14 +107,47 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Stats")
 	FFuelComposition FuelComposition;
 	
+	void SetupAttributeListeners();
+	FDelegateHandle FuelListener;
+	TMap<EShipSection, FDelegateHandle> HeatListeners;
+	TMap<EShipSection, FDelegateHandle> StabilityListeners;
+	
+	void OnFuelChanged(const FOnAttributeChangeData& Data);
+	void OnHeatChanged(const FOnAttributeChangeData& Data);
+	void OnStabilityChanged(const FOnAttributeChangeData& Data);
+	
+	UFUNCTION(BlueprintCallable, Category = "Bananas")
+	int GetBananaCount();
+	UFUNCTION(BlueprintCallable, Category = "Bananas")
+	int GetBananaCapacity() const;
+	UFUNCTION(BlueprintCallable, Category = "Heat")
+	float GetHeat() const;
+	UFUNCTION(BlueprintCallable, Category = "Heat")
+	float GetMaxHeat() const;
+	UFUNCTION(BlueprintCallable, Category = "Stability")
+	float GetStability() const;
+	UFUNCTION(BlueprintCallable, Category = "Stability")
+	float GetMaxStability() const;
+	
+	
+	/*
+	 * Initiation Stuff
+	 */
+	
 	void InitSegments();
 	void InitAttributes() const;
+	
+	/*
+	 * Systems
+	 */
 	
 	void TickSystems();
 	FTimerHandle TickHandle;
 	
-	UPROPERTY()
-	TMap<EShipSection, AShipSegmentManager*> Segments;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default", meta = (ToolTip = "The rate in seconds at which ship systems tick"))
+	float SystemTickRate;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default|Stats", meta = (ToolTip = "The base amount of heat gained per tick before any modifiers"))
+	float BaseHeatGainPerTick;
 	
 	void UpdateHeat() const;
 	void ConsumeFuel(const float& DeltaTime) const;
@@ -207,4 +224,5 @@ protected:
 	void BeginFlight() {Execute_BeginFlightSequence(this);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void PopOffTester() const {PopOffEvent(EShipSection::Whole, 1);}
+	
 };
