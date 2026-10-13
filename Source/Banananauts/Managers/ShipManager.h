@@ -201,22 +201,28 @@ protected:
 	 * Events
 	 */
 	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events",
+		meta = (ToolTip = "Multipler for event timer when status is clear."))
+	float ClearEventFrequency;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events",
+		meta = (ToolTip = "Multipler for event timer when status is warning."))
+	float WarningEventFrequency;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MinFirstEvent;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MaxFirstEvent;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
-	float MinClear;
+	float MinRandBetweenEvent;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
-	float MaxClear;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
-	float MinWarning;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
-	float MaxWarning;
+	float MaxRandBetweenEvent;
+	float CurrEventTimerDuration = 0.0f;
+	
 	
 	FTimerHandle RandomEventHandle;
 	void BeginRandomEventTimer();
 	void RandomEvent();
+	
+	void UpdateEventTimerRate(const float NewRate);
 	
 	void PopOffEvent(const EShipSection Category, const int Amount) const;
 	

@@ -31,12 +31,12 @@ AShipManager::AShipManager()
 	StabilityThreshold = 0.0f;
 	HeatThreshold = 1.0f/3.0f;
 	
+	ClearEventFrequency = 1.0f;
+	WarningEventFrequency = 0.5f;
 	MinFirstEvent = 12.0f;
 	MaxFirstEvent = 50.0f;
-	MinClear = 35.0f;
-	MaxClear = 60.0f;
-	MinWarning = 60.0f;
-	MaxWarning = 100.0f;
+	MinRandBetweenEvent = 35.0f;
+	MaxRandBetweenEvent = 60.0f;
 	
 	DefineStateTransitions();
 	
@@ -533,13 +533,44 @@ bool AShipManager::CheckAttributeStatus() const
 
 void AShipManager::BeginRandomEventTimer()
 {
-	const float RandomTime = FMath::RandRange(MinFirstEvent, MaxFirstEvent);
-	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, RandomTime, false);
+	CurrEventTimerDuration = FMath::RandRange(MinFirstEvent, MaxFirstEvent);
+	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
 }
 
 void AShipManager::RandomEvent()
 {
 	PopOffEvent(EShipSection::Whole, 1);
+	
+	float RandTime = 0;
+	switch (Status) {
+	case EShipStatus::Clear:
+		RandTime = FMath::RandRange(MinRandBetweenEvent, MaxRandBetweenEvent);
+		break;
+		
+	case EShipStatus::Warning:
+		RandTime =  FMath::RandRange(MinRandBetweenEvent, MaxRandBetweenEvent);
+		break;
+		
+	case EShipStatus::Fail:
+		break;
+	}
+	
+	if (RandTime > 0)
+	{
+		CurrEventTimerDuration = RandTime;
+		GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
+	}
+	
+}
+
+void AShipManager::UpdateEventTimerRate(const float NewRate)
+{
+	float RemainingTime = GetWorldTimerManager().GetTimerRemaining(RandomEventHandle);
+	float PercentRemaining = RemainingTime / CurrEventTimerDuration;
+	float NewDuration = CurrEventTimerDuration * PercentRemaining * NewRate;
+	
+	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, NewDuration, false);
+
 }
 
 void AShipManager::PopOffEvent(const EShipSection Category, const int Amount) const
