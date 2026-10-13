@@ -115,21 +115,37 @@ bool AShipManager::AddBananas(int Amount) const
 	return UShipStatsUtility::AddBananas(Amount, Segments);
 }
 
+/**
+ * Gets total heat across all segments
+ * @return Total heat of segments
+ */
 float AShipManager::GetHeat() const
 {
 	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetHeatAttribute(), Segments);
 }
 
+/**
+ * Gets total max heat across all segments
+ * @return Total max heat of segments
+ */
 float AShipManager::GetMaxHeat() const
 {
 	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetMaxHeatAttribute(), Segments);
 }
 
+/**
+* Gets total Stability across all segments
+ * @return Total Stability of segments
+ */
 float AShipManager::GetStability() const
 {
 	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetStabilityAttribute(), Segments);
 }
 
+/**
+* Gets total max Stability across all segments
+ * @return Total max Stability of segments
+ */
 float AShipManager::GetMaxStability() const
 {
 	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetMaxStabilityAttribute(), Segments);
@@ -211,15 +227,17 @@ void AShipManager::SetupAttributeListeners()
 
 void AShipManager::OnFuelChanged(const FOnAttributeChangeData& Data)
 {
-	
+	UpdateStatus();
 }
 
 void AShipManager::OnHeatChanged(const FOnAttributeChangeData& Data)
 {
+	UpdateStatus();
 }
 
 void AShipManager::OnStabilityChanged(const FOnAttributeChangeData& Data)
 {
+	UpdateStatus();
 }
 
 /**
@@ -387,6 +405,10 @@ void AShipManager::DefineStateTransitions()
 	{
 		OnWarningToClear();
 	});
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Fail, EShipStatus::Clear), [this]()
+	{
+		OnFailToClear();
+	});
 	
 	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Fail, EShipStatus::Warning), [this]()
 	{
@@ -394,7 +416,37 @@ void AShipManager::DefineStateTransitions()
 	});
 }
 
-void AShipManager::UpdateStatus(const EShipStatus NewStatus)
+void AShipManager::OnClearToWarning()
+{
+	
+}
+
+void AShipManager::OnClearToFail()
+{
+	
+}
+
+void AShipManager::OnWarningToClear()
+{
+	
+}
+
+void AShipManager::OnWarningToFail()
+{
+	
+}
+
+void AShipManager::OnFailToClear()
+{
+	
+}
+
+void AShipManager::OnFailToWarning()
+{
+	
+}
+
+void AShipManager::SetStatus(const EShipStatus NewStatus)
 {
 	if (Status == NewStatus) return;
 	
@@ -414,9 +466,51 @@ void AShipManager::UpdateStatus(const EShipStatus NewStatus)
 	Status = NewStatus;
 }
 
-void AShipManager::CheckAttributeStatus()
+/**
+ * Updates the ship status based on all conditions. This is where status conditions are implemented.
+ */
+void AShipManager::UpdateStatus()
 {
+	bool bFail = false;
+	bool bWarning = false;
+	
+	//Status checks below here
+	
+	if (!CheckAttributeStatus())
+	{
+		bWarning = true;
+	}
+	
+	//Update status hierarchically
+	if (bFail)
+	{
+		SetStatus(EShipStatus::Fail);
+	}
+	else if (bWarning)
+	{
+		SetStatus(EShipStatus::Warning);
+	}
+	else
+	{
+		SetStatus(EShipStatus::Clear);
+	}
+}
 
+/**
+ * Checks if attributes clear the status threshold
+ * @return True if clear, false if not
+ */
+bool AShipManager::CheckAttributeStatus() const
+{
+	const float HeatPercent = GetHeat() / GetMaxHeat();
+	const float StabilityPercent = GetStability() / GetMaxStability();
+	const float FuelPercent = Attributes->GetFuel() / Attributes->GetMaxFuel();
+	
+	if (HeatPercent <= HeatThreshold || StabilityPercent >= StabilityThreshold || FuelPercent <= FuelThreshold)
+	{
+		return true;
+	}
+	return false;
 }
 
 void AShipManager::BeginRandomEventTimer()

@@ -163,13 +163,15 @@ protected:
 	void OnClearToFail();
 	void OnWarningToClear();
 	void OnWarningToFail();
+	void OnFailToClear();
 	void OnFailToWarning();
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Default")
 	EShipStatus Status;
 	
-	void UpdateStatus(EShipStatus NewStatus);
-	void CheckAttributeStatus();
+	void SetStatus(EShipStatus NewStatus);
+	void UpdateStatus();
+	bool CheckAttributeStatus() const;
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Status")
 	float StabilityThreshold;
