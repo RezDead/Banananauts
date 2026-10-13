@@ -215,11 +215,16 @@ protected:
 	float MinRandBetweenEvent;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
 	float MaxRandBetweenEvent;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
+	float ToWarningEventDelay;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
+	float ToClearEventDelay;
 	float CurrEventTimerDuration = 0.0f;
 	
 	
 	FTimerHandle RandomEventHandle;
-	void BeginRandomEventTimer();
+	void BeginRandomEvents();
+	void StartRandomEventTimer();
 	void RandomEvent();
 	
 	void UpdateEventTimerRate(const float NewRate);

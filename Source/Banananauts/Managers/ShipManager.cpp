@@ -37,6 +37,8 @@ AShipManager::AShipManager()
 	MaxFirstEvent = 50.0f;
 	MinRandBetweenEvent = 35.0f;
 	MaxRandBetweenEvent = 60.0f;
+	ToWarningEventDelay = 10.0f;
+	ToClearEventDelay = 5.0f;
 	
 	DefineStateTransitions();
 	
@@ -424,32 +426,35 @@ void AShipManager::DefineStateTransitions()
 
 void AShipManager::OnClearToWarning()
 {
-	
+	UpdateEventTimerRate(WarningEventFrequency);
 }
 
 void AShipManager::OnClearToFail()
 {
-	
+	RandomEventHandle.Invalidate();
 }
 
 void AShipManager::OnWarningToClear()
 {
-	
+	CurrEventTimerDuration = ToClearEventDelay;
+	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
 }
 
 void AShipManager::OnWarningToFail()
 {
-	
+	RandomEventHandle.Invalidate();
 }
 
 void AShipManager::OnFailToClear()
 {
-	
+	CurrEventTimerDuration = ToClearEventDelay;
+	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
 }
 
 void AShipManager::OnFailToWarning()
 {
-	
+	CurrEventTimerDuration = ToWarningEventDelay;
+	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
 }
 
 /**
@@ -458,7 +463,6 @@ void AShipManager::OnFailToWarning()
  */
 void AShipManager::SetStatus(const EShipStatus NewStatus)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::SetStatus - Attempting to swap from %d to %d"), (int32)Status, (int32)NewStatus);
 	if (Status == NewStatus) return;
 	
 	const FTransitionKey Key = GetTransitionKey(Status, NewStatus);
@@ -470,13 +474,12 @@ void AShipManager::SetStatus(const EShipStatus NewStatus)
 		return;
 	}
 	
-	// Execute the code mapped to this path
-	TransitionRegistry[Key]();
-
 	// Commit status swap
 	Status = NewStatus;
 	
-	UE_LOG(LogTemp, Error, TEXT("ShipManager::SetStatus - Status changed from %d to %d"), (int32)Status, (int32)NewStatus);
+	// Execute the code mapped to this path
+	TransitionRegistry[Key]();
+	
 }
 
 /**
@@ -531,36 +534,43 @@ bool AShipManager::CheckAttributeStatus() const
 	return false;
 }
 
-void AShipManager::BeginRandomEventTimer()
+void AShipManager::BeginRandomEvents()
 {
 	CurrEventTimerDuration = FMath::RandRange(MinFirstEvent, MaxFirstEvent);
 	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
+}
+
+void AShipManager::StartRandomEventTimer()
+{
+	float Duration = 0.0f;;
+	
+	switch (Status) {
+	case EShipStatus::Clear:
+		CurrEventTimerDuration = FMath::RandRange(MinRandBetweenEvent, MaxRandBetweenEvent);
+		Duration = CurrEventTimerDuration * (1/ClearEventFrequency);
+		break;
+		
+	case EShipStatus::Warning:
+		CurrEventTimerDuration =  FMath::RandRange(MinRandBetweenEvent, MaxRandBetweenEvent);
+		Duration = CurrEventTimerDuration * (1/WarningEventFrequency);
+		break;
+		
+	case EShipStatus::Fail:
+		CurrEventTimerDuration = 0.0f;
+		break;
+	}
+	
+	if (CurrEventTimerDuration > 0)
+	{
+		GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, Duration, false);
+	}
 }
 
 void AShipManager::RandomEvent()
 {
 	PopOffEvent(EShipSection::Whole, 1);
 	
-	float RandTime = 0;
-	switch (Status) {
-	case EShipStatus::Clear:
-		RandTime = FMath::RandRange(MinRandBetweenEvent, MaxRandBetweenEvent);
-		break;
-		
-	case EShipStatus::Warning:
-		RandTime =  FMath::RandRange(MinRandBetweenEvent, MaxRandBetweenEvent);
-		break;
-		
-	case EShipStatus::Fail:
-		break;
-	}
-	
-	if (RandTime > 0)
-	{
-		CurrEventTimerDuration = RandTime;
-		GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
-	}
-	
+	StartRandomEventTimer();
 }
 
 void AShipManager::UpdateEventTimerRate(const float NewRate)
