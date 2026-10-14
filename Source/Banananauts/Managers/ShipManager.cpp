@@ -25,6 +25,21 @@ AShipManager::AShipManager()
 	MaxFuel = 0.0f;
 	AdhereStatusStrength = 5.0f;
 	
+	Status = EShipStatus::Clear;
+	
+	FuelThreshold = 1.0f/3.0f;
+	StabilityThreshold = 0.0f;
+	HeatThreshold = 1.0f/3.0f;
+	
+	MinFirstEvent = 12.0f;
+	MaxFirstEvent = 50.0f;
+	MinClear = 35.0f;
+	MaxClear = 60.0f;
+	MinWarning = 60.0f;
+	MaxWarning = 100.0f;
+	
+	DefineStateTransitions();
+	
 	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
 	SetRootComponent(RootSceneComponent);
 		
@@ -40,6 +55,102 @@ AShipManager::AShipManager()
 	TailSegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
+/**
+ * Initiates the flight of the ship and all in-flight systems.
+ */
+void AShipManager::BeginFlightSequence_Implementation()
+{
+	IShipCommunication::BeginFlightSequence_Implementation();
+	
+	bIsFlying = true;
+	
+	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
+	if (!ShipRouter.IsValid())
+	{
+		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
+	}
+	
+	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
+}
+
+/**
+ * Calculates the number of bananas on the ship.
+ * 
+ * @return The number of bananas on the ship.
+ */
+int AShipManager::GetBananaCount()
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetBananasAttribute(), Segments);
+}
+
+/**
+ * Calculates the maximum number of bananas the ship can hold.
+ * 
+ * @return The maximum number of bananas the ship can hold.
+ */
+int AShipManager::GetBananaCapacity() const
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetBananasAttribute(), Segments);
+}
+
+/**
+ * Uses the specified number of bananas from the ship.
+ * 
+ * @param Amount The number of bananas to use. Must be greater than 0.
+ * @return True if the operation was successful, false otherwise.
+ */
+bool AShipManager::UseBananas(int Amount) const
+{
+	return UShipStatsUtility::UseBananas(Amount, Segments);
+}
+
+/**
+ * Adds the specified number of bananas to the ship.
+ * 
+ * @param Amount The number of bananas to add. Must be greater than 0.
+ * @return True if any bananas were added, false if already at capacity or invalid input.
+ */
+bool AShipManager::AddBananas(int Amount) const
+{
+	return UShipStatsUtility::AddBananas(Amount, Segments);
+}
+
+/**
+ * Gets total heat across all segments
+ * @return Total heat of segments
+ */
+float AShipManager::GetHeat() const
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetHeatAttribute(), Segments);
+}
+
+/**
+ * Gets total max heat across all segments
+ * @return Total max heat of segments
+ */
+float AShipManager::GetMaxHeat() const
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetMaxHeatAttribute(), Segments);
+}
+
+/**
+* Gets total Stability across all segments
+ * @return Total Stability of segments
+ */
+float AShipManager::GetStability() const
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetStabilityAttribute(), Segments);
+}
+
+/**
+* Gets total max Stability across all segments
+ * @return Total max Stability of segments
+ */
+float AShipManager::GetMaxStability() const
+{
+	return UShipStatsUtility::GetAttributeTotal(UShipSegmentAttributes::GetMaxStabilityAttribute(), Segments);
+}
+
 void AShipManager::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -48,7 +159,7 @@ void AShipManager::Tick(const float DeltaTime)
 	{
 		//Update ship progress
 		ShipProgress += UShipStatsUtility::CalculateShipProgressAdditive(Attributes->GetMass(), FuelComposition.Thrust,
-																	 MinFlightTime, FlightLinearGrowthRate, DeltaTime);
+		                                                                 MinFlightTime, FlightLinearGrowthRate, DeltaTime);
 		
 		if (ShipProgress >= 1)
 		{
@@ -82,7 +193,57 @@ void AShipManager::BeginPlay()
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	
 	InitAttributes();
+	
+	SetupAttributeListeners();
 
+	UpdateStatus();
+}
+
+/**
+ * Sets up attribute listeners for both the ship and ship segments.
+ */
+void AShipManager::SetupAttributeListeners()
+{
+	if (!AbilitySystemComponent || !Nose || !Body || !Tail)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ShipManager::SetupAttributeListeners - ASC, Nose, Body, or Tail is null"));
+		return;
+	}
+	
+	UAbilitySystemComponent* NoseASC = Nose->GetAbilitySystemComponent();
+	UAbilitySystemComponent* BodyASC = Body->GetAbilitySystemComponent();
+	UAbilitySystemComponent* TailASC = Tail->GetAbilitySystemComponent();
+	
+	if (!NoseASC || !BodyASC || !TailASC)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ShipManager::SetupAttributeListeners - Nose, Body, or Tail ASC is null"));
+		return;
+	}
+	
+	FuelListener = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UShipAttributes::GetFuelAttribute()).AddUObject(this, &AShipManager::OnFuelChanged);
+	
+	HeatListeners.Add(EShipSection::Nose, NoseASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetHeatAttribute()).AddUObject(this, &AShipManager::OnHeatChanged));
+	HeatListeners.Add(EShipSection::Body, BodyASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetHeatAttribute()).AddUObject(this, &AShipManager::OnHeatChanged));
+	HeatListeners.Add(EShipSection::Tail, TailASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetHeatAttribute()).AddUObject(this, &AShipManager::OnHeatChanged));
+	
+	StabilityListeners.Add(EShipSection::Nose, NoseASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetStabilityAttribute()).AddUObject(this, &AShipManager::OnStabilityChanged));
+	StabilityListeners.Add(EShipSection::Body, BodyASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetStabilityAttribute()).AddUObject(this, &AShipManager::OnStabilityChanged));
+	StabilityListeners.Add(EShipSection::Tail, TailASC->GetGameplayAttributeValueChangeDelegate(UShipSegmentAttributes::GetStabilityAttribute()).AddUObject(this, &AShipManager::OnStabilityChanged));
+}
+
+void AShipManager::OnFuelChanged(const FOnAttributeChangeData& Data)
+{
+	UpdateStatus();
+}
+
+void AShipManager::OnHeatChanged(const FOnAttributeChangeData& Data)
+{
+	UpdateStatus();
+}
+
+void AShipManager::OnStabilityChanged(const FOnAttributeChangeData& Data)
+{
+	UpdateStatus();
 }
 
 /**
@@ -113,66 +274,6 @@ void AShipManager::InitAttributes() const
 	Attributes->InitMaxMass(MaxMass);
 	Attributes->InitFuel(0.0f);
 	Attributes->InitMaxFuel(MaxFuel);
-}
-
-/**
- * Initiates the flight of the ship and all in-flight systems.
- */
-void AShipManager::BeginFlightSequence_Implementation()
-{
-	IShipCommunication::BeginFlightSequence_Implementation();
-	
-	bIsFlying = true;
-	
-	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
-	if (!ShipRouter.IsValid())
-	{
-		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
-	}
-	
-	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
-}
-
-/**
- * Calculates the number of bananas on the ship.
- * 
- * @return The number of bananas on the ship.
- */
-int AShipManager::GetBananaCount()
-{
-	return UShipStatsUtility::GetBananaCount(Segments);
-}
-
-/**
- * Calculates the maximum number of bananas the ship can hold.
- * 
- * @return The maximum number of bananas the ship can hold.
- */
-int AShipManager::GetBananaCapacity()
-{
-	return UShipStatsUtility::GetBananaCapacity(Segments);
-}
-
-/**
- * Uses the specified number of bananas from the ship.
- * 
- * @param Amount The number of bananas to use. Must be greater than 0.
- * @return True if the operation was successful, false otherwise.
- */
-bool AShipManager::UseBananas(int Amount)
-{
-	return UShipStatsUtility::UseBananas(Amount, Segments);
-}
-
-/**
- * Adds the specified number of bananas to the ship.
- * 
- * @param Amount The number of bananas to add. Must be greater than 0.
- * @return True if any bananas were added, false if already at capacity or invalid input.
- */
-bool AShipManager::AddBananas(int Amount)
-{
-	return UShipStatsUtility::AddBananas(Amount, Segments);
 }
 
 /**
@@ -284,6 +385,161 @@ void AShipManager::Failure()
 	}
 	
 	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
+}
+
+/**
+ * Defines the state transitions for the ship status. Registers transition functions for each valid state-to-state transition
+ * in the TransitionRegistry. Each transition function is associated with a specific pair of starting and destination statuses.
+ */
+void AShipManager::DefineStateTransitions()
+{
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Clear, EShipStatus::Warning), [this]() {
+		OnClearToWarning();
+	});
+	
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Clear, EShipStatus::Fail), [this]()
+	{
+		OnClearToFail();
+	});
+	
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Warning, EShipStatus::Fail), [this]()
+	{
+		OnWarningToFail();
+	});
+	
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Warning, EShipStatus::Clear), [this]()
+	{
+		OnWarningToClear();
+	});
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Fail, EShipStatus::Clear), [this]()
+	{
+		OnFailToClear();
+	});
+	
+	TransitionRegistry.Add(GetTransitionKey(EShipStatus::Fail, EShipStatus::Warning), [this]()
+	{
+		OnFailToWarning();
+	});
+}
+
+void AShipManager::OnClearToWarning()
+{
+	
+}
+
+void AShipManager::OnClearToFail()
+{
+	
+}
+
+void AShipManager::OnWarningToClear()
+{
+	
+}
+
+void AShipManager::OnWarningToFail()
+{
+	
+}
+
+void AShipManager::OnFailToClear()
+{
+	
+}
+
+void AShipManager::OnFailToWarning()
+{
+	
+}
+
+/**
+ * Attempts to swap from one status to another, activating any logic that should occur.
+ * @param NewStatus Status to swap to.
+ */
+void AShipManager::SetStatus(const EShipStatus NewStatus)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ShipManager::SetStatus - Attempting to swap from %d to %d"), (int32)Status, (int32)NewStatus);
+	if (Status == NewStatus) return;
+	
+	const FTransitionKey Key = GetTransitionKey(Status, NewStatus);
+
+	// Check if illegal state swap
+	if (!TransitionRegistry.Contains(Key))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid status swap attempted from %d to %d"), (int32)Status, (int32)NewStatus);
+		return;
+	}
+	
+	// Execute the code mapped to this path
+	TransitionRegistry[Key]();
+
+	// Commit status swap
+	Status = NewStatus;
+	
+	UE_LOG(LogTemp, Error, TEXT("ShipManager::SetStatus - Status changed from %d to %d"), (int32)Status, (int32)NewStatus);
+}
+
+/**
+ * Updates the ship status based on all conditions. This is where status conditions are implemented.
+ */
+void AShipManager::UpdateStatus()
+{
+	bool bFail = false;
+	bool bWarning = false;
+	
+	//Status checks below here
+	
+	if (!CheckAttributeStatus())
+	{
+		bWarning = true;
+	}
+	
+	//Update status hierarchically
+	if (bFail)
+	{
+		SetStatus(EShipStatus::Fail);
+	}
+	else if (bWarning)
+	{
+		SetStatus(EShipStatus::Warning);
+	}
+	else
+	{
+		SetStatus(EShipStatus::Clear);
+	}
+}
+
+/**
+ * Checks if attributes clear the status threshold
+ * @return True if clear, false if not
+ */
+bool AShipManager::CheckAttributeStatus() const
+{
+	float lMaxHeat = GetMaxHeat();
+	float HeatPercent = lMaxHeat > 0 ? GetHeat() / lMaxHeat : 0.0f;
+	
+	float lMaxStability = GetMaxStability();
+	float StabilityPercent = lMaxStability > 0 ? GetStability() / lMaxStability : 0.0f;
+	
+	float lMaxFuel = Attributes->GetMaxFuel();
+	float FuelPercent = lMaxFuel > 0 ? Attributes->GetFuel() / lMaxFuel : 0.0f;
+	
+	if (HeatPercent <= HeatThreshold && StabilityPercent > StabilityThreshold && FuelPercent <= FuelThreshold)
+	{
+		return true;
+	}
+	return false;
+}
+
+void AShipManager::BeginRandomEventTimer()
+{
+	const float RandomTime = FMath::RandRange(MinFirstEvent, MaxFirstEvent);
+	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, RandomTime, false);
+}
+
+void AShipManager::RandomEvent()
+{
+	PopOffEvent(EShipSection::Whole, 1);
 }
 
 void AShipManager::PopOffEvent(const EShipSection Category, const int Amount) const

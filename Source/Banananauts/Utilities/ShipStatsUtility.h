@@ -11,7 +11,7 @@
 /**
  * Utility class for calculating ship stats/data and certain functions.
  * 
- * Last Edited: 10/9/2026
+ * Last Edited: 10/12/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -21,14 +21,13 @@ class BANANANAUTS_API UShipStatsUtility : public UBlueprintFunctionLibrary
 	
 public:
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static int GetBananaCount(const TMap<EShipSection, AShipSegmentManager*>& Segments);
-	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
-	static float GetBananaCapacity(const TMap<EShipSection, AShipSegmentManager*>& Segments);
+	static float GetAttributeTotal(const FGameplayAttribute& Attribute, const TMap<EShipSection, AShipSegmentManager*>& Segments);
+	
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
 	static bool UseBananas(int& Amount, const TMap<EShipSection, AShipSegmentManager*>& Segments);
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
 	static bool AddBananas(int& Amount, const TMap<EShipSection, AShipSegmentManager*>& Segments);
-
+	
 	static void PopOffEvent(const EShipSection Section,
 	                        const TMap<EShipSection, AShipSegmentManager*>& Segments, const int Amount);
 	
