@@ -429,56 +429,56 @@ void AShipManager::DefineStateTransitions()
 
 void AShipManager::OnClearToWarning()
 {
+	//Update frequency of event if events active and not in forced event
 	if (!bRandomEvents || bForcedEvent) return;
 	
 	UpdateEventTimerRate(WarningEventFrequency);
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnClearToWarning - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 void AShipManager::OnClearToFail()
 {
+	//If events active, clear timer
 	if (!bRandomEvents) return;
 	
 	GetWorldTimerManager().ClearTimer(RandomEventHandle);
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnClearToFail - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 void AShipManager::OnWarningToClear()
 {
+	//Begin warning to clear forced event if events active and not in forced event
 	if (!bRandomEvents || bForcedEvent) return;
 	
 	bForcedEvent = true;
 	CurrEventTimerDuration = ToClearEventDelay;
 	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnWarningToClear - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 void AShipManager::OnWarningToFail()
 {
+	//If events active, clear timer
 	if (!bRandomEvents) return;
 	
 	GetWorldTimerManager().ClearTimer(RandomEventHandle);
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnWarningToFail - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 void AShipManager::OnFailToClear()
 {
+	//Begin Fail to clear forced event if events active and not in forced event
 	if (!bRandomEvents || bForcedEvent) return;
 	
 	bForcedEvent = true;
 	CurrEventTimerDuration = ToClearEventDelay;
 	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnFailToClear - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 void AShipManager::OnFailToWarning()
 {
+	//Begin fail to warning forced event if events active and not in forced event
 	if (!bRandomEvents || bForcedEvent) return;
 	
 	bForcedEvent = true;
 	CurrEventTimerDuration = ToWarningEventDelay;
 	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnFailToWarning - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 /**
@@ -558,12 +558,18 @@ bool AShipManager::CheckAttributeStatus() const
 	return false;
 }
 
+/**
+ * Begins the random events timer
+ */
 void AShipManager::BeginRandomEvents()
 {
 	CurrEventTimerDuration = FMath::RandRange(MinFirstEvent, MaxFirstEvent);
 	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::FirstEvent, CurrEventTimerDuration, false);
 }
 
+/**
+ * Begins the next random event based on the current status of the ship.
+ */
 void AShipManager::StartRandomEventTimer()
 {
 	float Duration = 0.0f;
@@ -592,20 +598,29 @@ void AShipManager::StartRandomEventTimer()
 	}
 }
 
+/**
+ * First event that occurs
+ */
 void AShipManager::FirstEvent()
 {
 	bRandomEvents = true;
 	RandomEvent();
 }
 
+/**
+ * What happens when a random event occurs
+ */
 void AShipManager::RandomEvent()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::RandomEvent - Time Duration: %f Timer Duration: %f"), CurrEventTimerDuration, GetWorldTimerManager().GetTimerRate(RandomEventHandle));
 	PopOffEvent(EShipSection::Whole, 1);
 	
 	StartRandomEventTimer();
 }
 
+/**
+ * Updates the rate of the current random event timer.
+ * @param NewRate The rate the timer will now be set to.
+ */
 void AShipManager::UpdateEventTimerRate(const float NewRate)
 {
 	float RemainingTime = GetWorldTimerManager().GetTimerRemaining(RandomEventHandle);
@@ -617,6 +632,11 @@ void AShipManager::UpdateEventTimerRate(const float NewRate)
 
 }
 
+/**
+ * Triggers a specified number of events on a specific ship section
+ * @param Category Section to active event
+ * @param Amount Number of events
+ */
 void AShipManager::PopOffEvent(const EShipSection Category, const int Amount) const
 {
 	UShipStatsUtility::PopOffEvent(Category, Segments, Amount);

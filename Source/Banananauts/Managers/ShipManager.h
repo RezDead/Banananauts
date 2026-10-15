@@ -16,7 +16,7 @@
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 10/13/2026
+ * Last Edited: 10/15/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
@@ -245,11 +245,11 @@ protected:
 	void PopOffTester() const {PopOffEvent(EShipSection::Whole, 1);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void StartRandomEvent(){{BeginRandomEvents();}};
-	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing|Status")
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void SetStateClear() {SetStatus(EShipStatus::Clear);}
-	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing|Status")
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void SetStateWarning() {SetStatus(EShipStatus::Warning);}
-	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing|Status")
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void SetStateFail() {SetStatus(EShipStatus::Fail);}
 	
 };
