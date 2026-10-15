@@ -74,6 +74,7 @@ void AShipManager::BeginFlightSequence_Implementation()
 	}
 	
 	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
+	BeginRandomEvents();
 }
 
 /**
