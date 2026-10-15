@@ -225,15 +225,31 @@ protected:
 	FTimerHandle RandomEventHandle;
 	void BeginRandomEvents();
 	void StartRandomEventTimer();
+	void FirstEvent();
 	void RandomEvent();
 	
 	void UpdateEventTimerRate(const float NewRate);
 	
 	void PopOffEvent(const EShipSection Category, const int Amount) const;
 	
+	bool bRandomEvents;
+	bool bForcedEvent;
+	
+	/*
+	 * Testing
+	 */
+	
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void BeginFlight() {Execute_BeginFlightSequence(this);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void PopOffTester() const {PopOffEvent(EShipSection::Whole, 1);}
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
+	void StartRandomEvent(){{BeginRandomEvents();}};
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing|Status")
+	void SetStateClear() {SetStatus(EShipStatus::Clear);}
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing|Status")
+	void SetStateWarning() {SetStatus(EShipStatus::Warning);}
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing|Status")
+	void SetStateFail() {SetStatus(EShipStatus::Fail);}
 	
 };

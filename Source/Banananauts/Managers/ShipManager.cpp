@@ -39,6 +39,7 @@ AShipManager::AShipManager()
 	MaxRandBetweenEvent = 60.0f;
 	ToWarningEventDelay = 10.0f;
 	ToClearEventDelay = 5.0f;
+	bRandomEvents = false;
 	
 	DefineStateTransitions();
 	
@@ -156,6 +157,8 @@ float AShipManager::GetMaxStability() const
 void AShipManager::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Red, FString::Printf(TEXT("Duration: %f Time Remaining: %f"), CurrEventTimerDuration, GetWorldTimerManager().GetTimerRemaining(RandomEventHandle)));
 	
 	if (bIsFlying)
 	{
@@ -426,35 +429,56 @@ void AShipManager::DefineStateTransitions()
 
 void AShipManager::OnClearToWarning()
 {
+	if (!bRandomEvents || bForcedEvent) return;
+	
 	UpdateEventTimerRate(WarningEventFrequency);
+	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnClearToWarning - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 void AShipManager::OnClearToFail()
 {
-	RandomEventHandle.Invalidate();
+	if (!bRandomEvents) return;
+	
+	GetWorldTimerManager().ClearTimer(RandomEventHandle);
+	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnClearToFail - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 void AShipManager::OnWarningToClear()
 {
+	if (!bRandomEvents || bForcedEvent) return;
+	
+	bForcedEvent = true;
 	CurrEventTimerDuration = ToClearEventDelay;
 	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
+	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnWarningToClear - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 void AShipManager::OnWarningToFail()
 {
-	RandomEventHandle.Invalidate();
+	if (!bRandomEvents) return;
+	
+	GetWorldTimerManager().ClearTimer(RandomEventHandle);
+	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnWarningToFail - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 void AShipManager::OnFailToClear()
 {
+	if (!bRandomEvents || bForcedEvent) return;
+	
+	bForcedEvent = true;
 	CurrEventTimerDuration = ToClearEventDelay;
 	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
+	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnFailToClear - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 void AShipManager::OnFailToWarning()
 {
+	if (!bRandomEvents || bForcedEvent) return;
+	
+	bForcedEvent = true;
 	CurrEventTimerDuration = ToWarningEventDelay;
 	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
+	UE_LOG(LogTemp, Warning, TEXT("ShipManager::OnFailToWarning - Time Remaining: %f"), GetWorldTimerManager().GetTimerRemaining(RandomEventHandle));
 }
 
 /**
@@ -537,12 +561,13 @@ bool AShipManager::CheckAttributeStatus() const
 void AShipManager::BeginRandomEvents()
 {
 	CurrEventTimerDuration = FMath::RandRange(MinFirstEvent, MaxFirstEvent);
-	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
+	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::FirstEvent, CurrEventTimerDuration, false);
 }
 
 void AShipManager::StartRandomEventTimer()
 {
-	float Duration = 0.0f;;
+	float Duration = 0.0f;
+	bForcedEvent = false;
 	
 	switch (Status) {
 	case EShipStatus::Clear:
@@ -562,12 +587,20 @@ void AShipManager::StartRandomEventTimer()
 	
 	if (CurrEventTimerDuration > 0)
 	{
+		GetWorldTimerManager().ClearTimer(RandomEventHandle);
 		GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, Duration, false);
 	}
 }
 
+void AShipManager::FirstEvent()
+{
+	bRandomEvents = true;
+	RandomEvent();
+}
+
 void AShipManager::RandomEvent()
 {
+	UE_LOG(LogTemp, Warning, TEXT("ShipManager::RandomEvent - Time Duration: %f Timer Duration: %f"), CurrEventTimerDuration, GetWorldTimerManager().GetTimerRate(RandomEventHandle));
 	PopOffEvent(EShipSection::Whole, 1);
 	
 	StartRandomEventTimer();
@@ -577,8 +610,9 @@ void AShipManager::UpdateEventTimerRate(const float NewRate)
 {
 	float RemainingTime = GetWorldTimerManager().GetTimerRemaining(RandomEventHandle);
 	float PercentRemaining = RemainingTime / CurrEventTimerDuration;
-	float NewDuration = CurrEventTimerDuration * PercentRemaining * NewRate;
+	float NewDuration = CurrEventTimerDuration * PercentRemaining * (1/NewRate);
 	
+	GetWorldTimerManager().ClearTimer(RandomEventHandle);
 	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, NewDuration, false);
 
 }
