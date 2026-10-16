@@ -7,10 +7,19 @@
 #include "GameFramework/Actor.h"
 #include "ShipRouter.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSuccessDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFailureDelegate);
+
+enum EFlightType
+{
+	Launch,
+	Flight
+};
+
 /**
- * Route on which a ship will take during flight.
+ * Handles the route, flight, and launch of the ship.
  *
- * Last Edited: 9/17/2026
+ * Last Edited:10/16/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -22,14 +31,29 @@ public:
 	AShipRouter();
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float ShipProgress = 0;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USplineComponent* Spline;
 	
 	UFUNCTION(BlueprintCallable)
-	FTransform GetTransformAtPercent(float Alpha) const;
+	void SetShip(AActor* NewShip) { Ship = NewShip;}
+	
+	UFUNCTION(BlueprintCallable)
+	void AddShipProgress(const float DeltaProgress);
+	
+	UPROPERTY(BlueprintAssignable)
+	FSuccessDelegate SuccessDelegate;
+	UPROPERTY(BlueprintAssignable)
+	FFailureDelegate FailureDelegate;
 	
 protected:
 	virtual void BeginPlay() override;
 	
-private:
+	FTransform GetTransformAtPercent(float Alpha) const;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	AActor* Ship;
+	
 	float SplineLength;
 };

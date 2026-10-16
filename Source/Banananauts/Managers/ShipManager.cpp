@@ -14,6 +14,9 @@ AShipManager::AShipManager()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	
+	LaunchDuration = 10.0f;
+	LaunchDelay = 2.5f;
+	
 	MinFlightTime = 7.5f;
 	FlightLinearGrowthRate = 0.05556f;
 	
@@ -23,7 +26,6 @@ AShipManager::AShipManager()
 	
 	MaxMass = 0.0f;
 	MaxFuel = 0.0f;
-	AdhereStatusStrength = 5.0f;
 	
 	Status = EShipStatus::Clear;
 	
@@ -59,25 +61,46 @@ AShipManager::AShipManager()
 }
 
 /**
+ * Begins launch sequence for the ship
+ */
+void AShipManager::BeginLaunchSequence_Implementation()
+{
+	IShipCommunication::BeginLaunchSequence_Implementation();
+	
+	// if (Attributes->GetMass() >= Attributes->GetMaxMass() || Attributes->GetFuel() <= 0)
+	// {
+	// 	LaunchFailed();
+	// 	return;
+	// }
+	
+	InitShipRouter();
+	
+	
+}
+
+void AShipManager::InitShipRouter()
+{
+	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
+	if (!ShipRouter.IsValid())
+	{
+		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
+	}
+	
+	ShipRouter->SetShip(this);
+	ShipRouter->SuccessDelegate.AddDynamic(this, &AShipManager::Success);
+	ShipRouter->FailureDelegate.AddDynamic(this, &AShipManager::Failure);
+}
+
+/**
  * Initiates the flight of the ship and all in-flight systems.
  */
 void AShipManager::BeginFlightSequence_Implementation()
 {
 	IShipCommunication::BeginFlightSequence_Implementation();
 	
-	if (Attributes->GetMass() >= Attributes->GetMaxMass() || Attributes->GetFuel() <= 0)
-	{
-		LaunchFailed();
-		return;
-	}
-	
 	bIsFlying = true;
 	
-	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
-	if (!ShipRouter.IsValid())
-	{
-		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
-	}
+	InitShipRouter();
 	
 	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
 	BeginRandomEvents();
@@ -165,33 +188,23 @@ void AShipManager::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
-	GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Red, FString::Printf(TEXT("Duration: %f Time Remaining: %f"), CurrEventTimerDuration, GetWorldTimerManager().GetTimerRemaining(RandomEventHandle)));
+	if (bIsLaunching)
+	{
+		
+	}
 	
 	if (bIsFlying)
 	{
 		//Update ship progress
-		ShipProgress += UShipStatsUtility::CalculateShipProgressAdditive(Attributes->GetMass(), FuelComposition.Thrust,
+		const float DeltaProgress = UShipStatsUtility::CalculateShipProgressAdditive(Attributes->GetMass(), FuelComposition.Thrust,
 		                                                                 MinFlightTime, FlightLinearGrowthRate, DeltaTime);
 		
-		if (ShipProgress >= 1)
-		{
-			const FTransform NewTransform = ShipRouter->GetTransformAtPercent(1.0f);
-			SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
-			
-			Success();
-			
-			return;
-		}
-		
-		//Update position
-		const FTransform NewTransform = ShipRouter->GetTransformAtPercent(ShipProgress);
-		SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
+		ShipRouter->AddShipProgress(DeltaProgress);
 		
 		ConsumeFuel(DeltaTime);
 		
 		// if (Attributes->GetFuel() <= 0)
-		// 	Failure();
-		
+		// 	ShipRouter->FailureDelegate.Broadcast();
 	}
 }
 

@@ -3,9 +3,6 @@
 
 #include "ShipRouter.h"
 
-#include "Kismet/KismetMathLibrary.h"
-
-
 // Sets default values
 AShipRouter::AShipRouter()
 {
@@ -35,6 +32,25 @@ FTransform AShipRouter::GetTransformAtPercent(const float Alpha) const
 	Ret.SetRotation(Rot * MeshOffset);
 	
 	return Ret;
+}
+
+void AShipRouter::AddShipProgress(const float DeltaProgress)
+{
+	ShipProgress += DeltaProgress;
+	
+	if (ShipProgress >= 1)
+	{
+		const FTransform NewTransform = GetTransformAtPercent(1.0f);
+		Ship->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
+			
+		SuccessDelegate.Broadcast();
+			
+		return;
+	}
+		
+	//Update position
+	const FTransform NewTransform = GetTransformAtPercent(ShipProgress);
+	Ship->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
 }
 
 // Called when the game starts or when spawned

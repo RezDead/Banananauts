@@ -32,6 +32,7 @@ public:
 	{ OutContainer = GameplayTags; }
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
+	virtual void BeginLaunchSequence_Implementation() override;
 	virtual void BeginFlightSequence_Implementation() override;
 	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
@@ -93,16 +94,18 @@ protected:
 	float MaxMass = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats")
 	float MaxFuel = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats",
-		meta = (ToolTip = "Percentage chance of adhere status blocking pop-off"))
-	float AdhereStatusStrength = 0.0f;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Launch")
+	bool bIsLaunching = false;
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Launch", meta = (ToolTip = "The duration is seconds a launch takes"))
+	float LaunchDuration;
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Launch")
+	float LaunchDelay;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
 	bool bIsFlying = false;
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
 	TWeakObjectPtr<AShipRouter> ShipRouter = nullptr;
-	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
-	float ShipProgress = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight",
 		meta = (AllowPrivateAccess = "true", ToolTip = "The rate at which gallons of fuel is consumed per minute"))
 	float FuelBurnRate = 0.0f;
@@ -143,6 +146,7 @@ protected:
 	
 	void InitSegments();
 	void InitAttributes() const;
+	void InitShipRouter();
 	
 	/*
 	 * Systems
@@ -163,7 +167,9 @@ protected:
 	 * Win/Fail
 	 */
 	
+	UFUNCTION()
 	void Success();
+	UFUNCTION()
 	void Failure();
 	
 	bool bIsChangingLevel = false;
