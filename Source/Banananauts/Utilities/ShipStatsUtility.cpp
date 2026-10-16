@@ -7,6 +7,9 @@
 #include "Banananauts/GAS/Attributes/Items/ItemStability.h"
 #include "Banananauts/GAS/Effects/EModifyBananas.h"
 
+//Variables
+float UShipStatsUtility::NegativeDoubleChance = 50.0f;
+
 /**
  * Gets the total value of all of a ship segment attribute
  * 
@@ -90,12 +93,14 @@ bool UShipStatsUtility::AddBananas(int& Amount, const TMap<EShipSection, AShipSe
  * @param Segments Map of ship segment references.
  * @param Amount Number of items to pop off.
  */
-void UShipStatsUtility::PopOffEvent(const EShipSection Section, const TMap<EShipSection, AShipSegmentManager*>& Segments, const int Amount)
+void UShipStatsUtility::PopOffEvent(const EShipSection Section, const TMap<EShipSection, AShipSegmentManager*>& Segments, int Amount)
 {
 	if (Amount <= 0 || Segments.Num() <= 0)
 	{
 		return;
 	}
+	
+	StabilityEventHelper(Section, Segments, Amount);
 	
 	TArray<AActor*> AttachedItems;
 	
@@ -250,6 +255,51 @@ void UShipStatsUtility::CalculateWeightFromAttachedItems(const TArray<AActor*>& 
 		
 		UE_LOG(LogTemp, Warning, TEXT("ShipStatsUtility::PopOffItem - Failed to get ASC from actor %s"), *AttachedItems[i]->GetName());
 		Weight.Add(0.0f);
+	}
+}
+
+/**
+ * Checks if the number of events should be increase based on negative stability
+ * @param Section Section being checked
+ * @param Segments Map of segments
+ * @param Amount Reference to event amount
+ */
+void UShipStatsUtility::StabilityEventHelper(const EShipSection& Section,
+                                             const TMap<EShipSection, AShipSegmentManager*>& Segments, int& Amount)
+{
+	const AShipSegmentManager* Nose = Segments[EShipSection::Nose];
+	const AShipSegmentManager* Body = Segments[EShipSection::Body];
+	const AShipSegmentManager* Tail = Segments[EShipSection::Tail];
+		
+	if (!Nose || !Body || !Tail) {return;}
+	bool bNegative = false;
+	
+	switch (Section) {
+	case EShipSection::Whole:
+		if (Nose->GetAbilitySystemComponent()->GetNumericAttribute(UItemStability::GetStabilityAttribute()) + Body
+			->GetAbilitySystemComponent()->GetNumericAttribute(UItemStability::GetStabilityAttribute()) + Tail->
+			GetAbilitySystemComponent()->GetNumericAttribute(UItemStability::GetStabilityAttribute()) < 0)
+		{bNegative = true;}
+		break;
+	case EShipSection::Nose:
+		if (Nose->GetAbilitySystemComponent()->GetNumericAttribute(UItemStability::GetStabilityAttribute()) < 0) {bNegative = true;}
+		break;
+	case EShipSection::Body:
+		if (Body->GetAbilitySystemComponent()->GetNumericAttribute(UItemStability::GetStabilityAttribute()) < 0) {bNegative = true;}
+		break;
+	case EShipSection::Tail:
+		if (Tail->GetAbilitySystemComponent()->GetNumericAttribute(UItemStability::GetStabilityAttribute()) < 0) {bNegative = true;}
+		break;
+	}
+	
+	if (!bNegative) {return;}
+	
+	for (int i = 0; i < Amount; i++)
+	{
+		if (FMath::FRandRange(0.0f, 100.0f) <= NegativeDoubleChance)
+		{
+			Amount++;
+		}
 	}
 }
 
