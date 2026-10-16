@@ -97,9 +97,12 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Launch")
 	bool bIsLaunching = false;
-	UPROPERTY(BlueprintReadOnly, Category = "Default|Launch", meta = (ToolTip = "The duration is seconds a launch takes"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Launch")
+	TSoftObjectPtr<UWorld> FlightLevel = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Launch",
+		meta = (ToolTip = "The duration is seconds a launch takes", ClampMin = 1.0))
 	float LaunchDuration;
-	UPROPERTY(BlueprintReadOnly, Category = "Default|Launch")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Launch")
 	float LaunchDelay;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
@@ -138,8 +141,7 @@ protected:
 	float GetStability() const;
 	UFUNCTION(BlueprintCallable, Category = "Stability")
 	float GetMaxStability() const;
-	
-	
+
 	/*
 	 * Initiation Stuff
 	 */
@@ -147,6 +149,16 @@ protected:
 	void InitSegments();
 	void InitAttributes() const;
 	void InitShipRouter();
+	
+	/*
+	 * Flight/Launch
+	 */
+	
+	UFUNCTION(BlueprintNativeEvent)
+	void Launch();
+	
+	void HandleFlight(float DeltaTime) const;
+	void HandleLaunch(float DeltaTime) const;
 	
 	/*
 	 * Systems

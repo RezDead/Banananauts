@@ -67,15 +67,16 @@ void AShipManager::BeginLaunchSequence_Implementation()
 {
 	IShipCommunication::BeginLaunchSequence_Implementation();
 	
-	// if (Attributes->GetMass() >= Attributes->GetMaxMass() || Attributes->GetFuel() <= 0)
-	// {
-	// 	LaunchFailed();
-	// 	return;
-	// }
+	/*if (Attributes->GetMass() >= Attributes->GetMaxMass() || Attributes->GetFuel() <= 0)
+	{
+		LaunchFailed();
+		return;
+	}*/
 	
 	InitShipRouter();
 	
-	
+	FTimerHandle LaunchDelayHandle;
+	GetWorld()->GetTimerManager().SetTimer(LaunchDelayHandle, this, &AShipManager::Launch, LaunchDelay, false);
 }
 
 void AShipManager::InitShipRouter()
@@ -89,6 +90,11 @@ void AShipManager::InitShipRouter()
 	ShipRouter->SetShip(this);
 	ShipRouter->SuccessDelegate.AddDynamic(this, &AShipManager::Success);
 	ShipRouter->FailureDelegate.AddDynamic(this, &AShipManager::Failure);
+}
+
+void AShipManager::Launch_Implementation()
+{
+	bIsLaunching = true;
 }
 
 /**
@@ -188,23 +194,35 @@ void AShipManager::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
-	if (bIsLaunching)
-	{
-		
-	}
+	HandleLaunch(DeltaTime);
 	
+	HandleFlight(DeltaTime);
+}
+
+void AShipManager::HandleFlight(const float DeltaTime) const
+{
 	if (bIsFlying)
 	{
 		//Update ship progress
 		const float DeltaProgress = UShipStatsUtility::CalculateShipProgressAdditive(Attributes->GetMass(), FuelComposition.Thrust,
-		                                                                 MinFlightTime, FlightLinearGrowthRate, DeltaTime);
+			MinFlightTime, FlightLinearGrowthRate, DeltaTime);
 		
 		ShipRouter->AddShipProgress(DeltaProgress);
 		
 		ConsumeFuel(DeltaTime);
 		
-		// if (Attributes->GetFuel() <= 0)
-		// 	ShipRouter->FailureDelegate.Broadcast();
+		if (Attributes->GetFuel() <= 0)
+			ShipRouter->FailureDelegate.Broadcast();
+	}
+}
+
+void AShipManager::HandleLaunch(const float DeltaTime) const
+{
+	if (bIsLaunching)
+	{
+		const float DeltaProgress = DeltaTime * 1/LaunchDuration;
+		
+		ShipRouter->AddShipProgress(DeltaProgress);
 	}
 }
 
@@ -394,7 +412,21 @@ void AShipManager::ConsumeFuel(const float& DeltaTime) const
  */
 void AShipManager::Success()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::Success - Game Won, need to add implementation"));
+	if (bIsLaunching)
+	{
+		//Launch Complete, load flight level
+		if (FlightLevel.GetAssetName().IsEmpty())
+		{
+			UE_LOG(LogTemp, Fatal, TEXT("ShipManager::Success - Invalid level to load, make sure Flight Level is valid"));
+			return;
+		}
+	
+		UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), FlightLevel);
+	} 
+	else if (bIsFlying)
+	{
+		//Game Win
+	}
 }
 
 /**
@@ -413,7 +445,7 @@ void AShipManager::Failure()
 	
 	if (LevelToLoad.GetAssetName().IsEmpty())
 	{
-		UE_LOG(LogTemp, Error, TEXT("ShipManager::Failure - Invalid level to load, make sure Levels DT is valid"));
+		UE_LOG(LogTemp, Fatal, TEXT("ShipManager::Failure - Invalid level to load, make sure Levels DT is valid"));
 		return;
 	}
 	
