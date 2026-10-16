@@ -9,6 +9,7 @@
 
 //Variables
 float UShipStatsUtility::NegativeDoubleChance = 50.0f;
+float UShipStatsUtility::AdheredEventBlockChance = 10.0f;
 
 /**
  * Gets the total value of all of a ship segment attribute
@@ -259,6 +260,30 @@ void UShipStatsUtility::CalculateWeightFromAttachedItems(const TArray<AActor*>& 
 }
 
 /**
+ * Checks if an item should be popped off based on adhered status.
+ * @param Item Item to check
+ * @return True if still pop off, false if not
+ */
+bool UShipStatsUtility::AdheredPopCheck(const AActor* Item)
+{
+	if (!Item) {return false;}
+	UAbilitySystemComponent* ItemASC = nullptr;
+	if (const IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(Item))
+	{
+		ItemASC = ASCInterface->GetAbilitySystemComponent();
+	}
+
+	const FGameplayTag TagToCheck = FGameplayTag::RequestGameplayTag(FName("Status.Adhered"));
+	
+	if (ItemASC && ItemASC->HasMatchingGameplayTag(TagToCheck))
+	{
+		ItemASC->RemoveLooseGameplayTag(TagToCheck);
+		if (FMath::FRandRange(0.0f, 100.0f) <= AdheredEventBlockChance) {return false;}
+	}
+	return true;
+}
+
+/**
  * Checks if the number of events should be increase based on negative stability
  * @param Section Section being checked
  * @param Segments Map of segments
@@ -327,6 +352,8 @@ void UShipStatsUtility::PopOffItem(TArray<AActor*>& AttachedItems, float& TotalW
 		
 		if (CurrentWeight >= TargetWeight)
 		{
+			if (!AdheredPopCheck(AttachedItems[i])) break;
+			
 			if (AActor* Segment = AttachedItems[i]->GetAttachParentActor())
 			{
 				if (Segment->Implements<UAttachableSegment>())
