@@ -58,6 +58,12 @@ protected:
 private:
 	void InitAttributes() const;
 	
+	void SetupAttributeListeners();
+	FDelegateHandle StabilityListener;
+	void OnStabilityChanged(const FOnAttributeChangeData& Data) const;
+	
+	void AddTagToAllItems(FGameplayTag Tag) const;
+	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	float MaxHeat = 0.0f;
 	
