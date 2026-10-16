@@ -3,7 +3,7 @@
 
 #include "ShipStatsUtility.h"
 
-#include "Banananauts/Data/TRB_Levels.h"
+#include "Banananauts/Data/Tables/TRB_Levels.h"
 #include "Banananauts/GAS/Attributes/Items/ItemStability.h"
 #include "Banananauts/GAS/Effects/EModifyBananas.h"
 

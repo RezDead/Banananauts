@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayTagAssetInterface.h"
-#include "Banananauts/Data/TRB_ItemInformation.h"
+#include "Banananauts/Data/Tables/TRB_ItemInformation.h"
 #include "GameFramework/Actor.h"
 #include "ItemBase.generated.h"
 

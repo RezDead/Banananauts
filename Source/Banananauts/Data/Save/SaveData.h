@@ -7,7 +7,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Banananauts/Data/ItemSaveInfo.h"
+#include "Banananauts/Structs//ItemSaveInfo.h"
 #include "GameFramework/SaveGame.h"
 #include "SaveData.generated.h"
 

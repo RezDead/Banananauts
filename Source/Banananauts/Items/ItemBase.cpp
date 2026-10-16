@@ -3,7 +3,7 @@
 
 #include "ItemBase.h"
 #include "AbilitySystemComponent.h"
-#include "Banananauts/Data/TRB_ItemInformation.h"
+#include "Banananauts/Data/Tables/TRB_ItemInformation.h"
 #include "Banananauts/GAS/Attributes/Items/ItemAblation.h"
 #include "Banananauts/GAS/Attributes/Items/ItemHeat.h"
 #include "Banananauts/GAS/Attributes/Items/ItemMass.h"
