@@ -2,6 +2,7 @@
 
 
 #include "ShipRouter.h"
+#include "Banananauts/Interfaces/ShipCommunication.h"
 
 // Sets default values
 AShipRouter::AShipRouter()
@@ -53,6 +54,24 @@ void AShipRouter::AddShipProgress(const float DeltaProgress)
 	Ship->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
 }
 
+/**
+ * Begins flight route based on what route type is specified
+ */
+void AShipRouter::BeginRoute() const
+{
+	switch (RouteType) {
+	case EFlightType::Launch:
+		break;
+	case EFlightType::Flight:
+		const IShipCommunication* Communication = Cast<IShipCommunication>(Ship);
+		if (Communication)
+		{
+			Communication->Execute_BeginFlightSequence(Ship);
+		}
+		break;
+	}
+}
+
 // Called when the game starts or when spawned
 void AShipRouter::BeginPlay()
 {
@@ -61,6 +80,16 @@ void AShipRouter::BeginPlay()
 	if (Spline)
 	{
 		SplineLength = Spline->GetSplineLength();
+	}
+	
+	Ship = ShipRef.Get();
+	
+	if (IsValid(Ship))
+	{
+		BeginRoute();
+	}
+	else {
+		UE_LOG(LogTemp, Fatal, TEXT("AShipRouter::BeginPlay(): Ship reference is nullptr, make sure this is set in editor"));
 	}
 }
 

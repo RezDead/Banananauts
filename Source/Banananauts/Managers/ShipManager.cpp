@@ -81,7 +81,6 @@ void AShipManager::InitShipRouter()
 		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
 	}
 	
-	ShipRouter->SetShip(this);
 	ShipRouter->SuccessDelegate.AddDynamic(this, &AShipManager::Success);
 	ShipRouter->FailureDelegate.AddDynamic(this, &AShipManager::Failure);
 }
@@ -205,8 +204,8 @@ void AShipManager::HandleFlight(const float DeltaTime) const
 		
 		ConsumeFuel(DeltaTime);
 		
-		if (Attributes->GetFuel() <= 0)
-			ShipRouter->FailureDelegate.Broadcast();
+		/*if (Attributes->GetFuel() <= 0)
+			ShipRouter->FailureDelegate.Broadcast();*/
 	}
 }
 

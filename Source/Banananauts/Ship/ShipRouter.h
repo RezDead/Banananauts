@@ -10,7 +10,8 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSuccessDelegate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFailureDelegate);
 
-enum EFlightType
+UENUM(BlueprintType)
+enum class EFlightType : uint8
 {
 	Launch,
 	Flight
@@ -31,17 +32,11 @@ public:
 	AShipRouter();
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float ShipProgress = 0;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USplineComponent* Spline;
 	
 	UFUNCTION(BlueprintCallable)
-	void SetShip(AActor* NewShip) { Ship = NewShip;}
-	
-	UFUNCTION(BlueprintCallable)
 	void AddShipProgress(const float DeltaProgress);
-	
+
 	UPROPERTY(BlueprintAssignable)
 	FSuccessDelegate SuccessDelegate;
 	UPROPERTY(BlueprintAssignable)
@@ -52,8 +47,19 @@ protected:
 	
 	FTransform GetTransformAtPercent(float Alpha) const;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly)
+	float ShipProgress = 0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EFlightType RouteType = EFlightType::Launch;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<AActor> ShipRef;
+	
+	UPROPERTY()
 	AActor* Ship;
 	
 	float SplineLength;
+	
+private:
+	void BeginRoute() const;
 };
