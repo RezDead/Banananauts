@@ -9,6 +9,9 @@
 #include "Banananauts/Utilities/ShipStatsUtility.h"
 #include "Kismet/GameplayStatics.h"
 #include "Banananauts/Ship/RandomEventComponent.h"
+#include "Banananauts/Subsystems/LevelManagerSubsystem.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 
 AShipManager::AShipManager()
 {
@@ -66,6 +69,11 @@ void AShipManager::BeginLaunchSequence_Implementation()
 		LaunchFailed();
 		return;
 	}*/
+
+	if (ULevelManagerSubsystem* Subsystem = GetGameInstance()->GetSubsystem<ULevelManagerSubsystem>())
+	{
+		Subsystem->StartPreloadingLevel(FlightLevel);
+	}
 	
 	InitShipRouter();
 	
@@ -205,7 +213,7 @@ void AShipManager::HandleFlight(const float DeltaTime) const
 		ConsumeFuel(DeltaTime);
 		
 		/*if (Attributes->GetFuel() <= 0)
-			ShipRouter->FailureDelegate.Broadcast();*/
+			ShipRouter->Failure();*/
 	}
 }
 
@@ -409,18 +417,13 @@ void AShipManager::Success()
 {
 	if (bIsLaunching)
 	{
-		//Launch Complete, load flight level
-		if (FlightLevel.GetAssetName().IsEmpty())
-		{
-			UE_LOG(LogTemp, Fatal, TEXT("ShipManager::Success - Invalid level to load, make sure Flight Level is valid"));
-			return;
-		}
-	
-		UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), FlightLevel);
+		//Launch Complete
+		
 	} 
 	else if (bIsFlying)
 	{
 		//Game Win
+		
 	}
 }
 
@@ -429,22 +432,8 @@ void AShipManager::Success()
  */
 void AShipManager::Failure()
 {
-	if (bIsChangingLevel)
-		return;
-	
 	UE_LOG(LogTemp, Display, TEXT("ShipManager::Failure - Game Lost"));
 	
-	bIsChangingLevel = true;
-	
-	const TSoftObjectPtr<UWorld> LevelToLoad = UShipStatsUtility::GetRandomLevel(LevelsDT);
-	
-	if (LevelToLoad.GetAssetName().IsEmpty())
-	{
-		UE_LOG(LogTemp, Fatal, TEXT("ShipManager::Failure - Invalid level to load, make sure Levels DT is valid"));
-		return;
-	}
-	
-	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
 }
 
 /**

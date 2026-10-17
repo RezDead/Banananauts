@@ -20,7 +20,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnShipStatusChanged, EShipStatus, 
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 10/15/2026
+ * Last Edited: 10/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
@@ -196,8 +196,6 @@ protected:
 	void Success();
 	UFUNCTION()
 	void Failure();
-	
-	bool bIsChangingLevel = false;
 	
 	/*
 	 * Status

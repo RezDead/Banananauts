@@ -148,20 +148,6 @@ void UShipStatsUtility::PopOffEvent(const EShipSection Section, const TMap<EShip
 	}
 }
 
-TSoftObjectPtr<UWorld> UShipStatsUtility::GetRandomLevel(const UDataTable* LevelsDT)
-{
-	if (!LevelsDT) {return nullptr;}
-	TArray<FName> RowNames = LevelsDT->GetRowNames();
-	
-	if (RowNames.Num() == 0) {return nullptr;}
-	static const FString Context = TEXT("Fetching random level");
-	
-	TSoftObjectPtr<UWorld> Level = LevelsDT->FindRow<FTRB_Levels>(RowNames[FMath::RandRange(0, RowNames.Num() - 1)], Context)->Level;
-	
-	return Level;
-	
-}
-
 /**
  * Helper function to remove bananas from a ship segment.
  * 
