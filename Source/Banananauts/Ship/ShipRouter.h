@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/Actor.h"
 #include "ShipRouter.generated.h"
@@ -17,8 +18,37 @@ enum class EFlightType : uint8
 	Flight
 };
 
+USTRUCT(BlueprintType)
+struct FSetRouteEvent
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (ClampMin = "0", ClampMax = "1"))
+	float MinPercentTrigger = 0.0f;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (ClampMin = "0", ClampMax = "1"))
+	float MaxPercentTrigger = 0.0f;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FGameplayTag EventAction;
+};
+
+USTRUCT(BlueprintType)
+struct FRouteEvent
+{
+	GENERATED_BODY()
+	
+	UPROPERTY()
+	float PercentTrigger = 0.0f;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FGameplayTag EventAction;
+	
+	UPROPERTY()
+	bool bTriggered = false;
+};
+
 /**
- * Handles the route, flight, and launch of the ship.
+ * Handles a ship route and events that occur along the way.
  *
  * Last Edited:10/18/2026
  * Author: Julian Kroeger-Miller
@@ -54,6 +84,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	float ShipProgress = 0;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
+	TArray<FSetRouteEvent> SetRouteEvents;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default")
 	EFlightType RouteType = EFlightType::Launch;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
@@ -65,4 +97,18 @@ protected:
 	float SplineLength;
 	
 	virtual void BeginRoute() const;
+
+	virtual void TriggerEvent(const FGameplayTag EventAction);
+	
+	UPROPERTY()
+	TArray<FRouteEvent> RouteEvents;
+	UPROPERTY()
+	int CurrentEventIndex = 0;
+	
+	UFUNCTION(CallInEditor, Category = "Default")
+	void ShowEventRanges();
+	
+private:
+	void InitRouteEvents();
+	void CheckIfRouteEventTriggered();
 };

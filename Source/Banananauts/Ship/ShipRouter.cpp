@@ -3,11 +3,6 @@
 
 #include "ShipRouter.h"
 
-#include "Banananauts/Data/Tables/TRB_Levels.h"
-#include "Banananauts/Interfaces/ShipCommunication.h"
-#include "Banananauts/Subsystems/LevelManagerSubsystem.h"
-#include "Banananauts/Subsystems/SaveSubsystem.h"
-
 // Sets default values
 AShipRouter::AShipRouter()
 {
@@ -47,6 +42,8 @@ void AShipRouter::AddShipProgress(const float DeltaProgress)
 {
 	ShipProgress += DeltaProgress;
 	
+	CheckIfRouteEventTriggered();
+	
 	if (ShipProgress >= 1)
 	{
 		const FTransform NewTransform = GetTransformAtPercent(1.0f);
@@ -63,11 +60,80 @@ void AShipRouter::AddShipProgress(const float DeltaProgress)
 }
 
 /**
- * Begins flight route based on what route type is specified
+ * --To be implemented in Children--
+ *
+ * Begins flight route.
  */
 void AShipRouter::BeginRoute() const
 {
 
+}
+
+/**
+ * Debug Function
+ *
+ * Draws debug lines and spheres for route events.
+ */
+void AShipRouter::ShowEventRanges()
+{
+	for (const auto& SetEvent : SetRouteEvents)
+	{
+		FColor Color = FColor::MakeRandomColor();
+		FVector Min = Spline->GetLocationAtDistanceAlongSpline(Spline->GetSplineLength() * SetEvent.MinPercentTrigger, ESplineCoordinateSpace::World);
+		FVector Max = Spline->GetLocationAtDistanceAlongSpline(Spline->GetSplineLength() * SetEvent.MaxPercentTrigger, ESplineCoordinateSpace::World);
+		DrawDebugSphere(GetWorld(), Min, 50, 4, Color, false, 10.0f, 0, 5);
+		DrawDebugSphere(GetWorld(), Max, 50, 4, Color, false, 10.0f, 0, 5);
+		DrawDebugLine(GetWorld(), Min, Max, Color, false, 10.0f, 0, 5);
+	}
+}
+
+/**
+ * Initializes the route events.
+ */
+void AShipRouter::InitRouteEvents()
+{
+	if (SetRouteEvents.IsEmpty()) {return;}
+	
+	for (const auto& SetEvent : SetRouteEvents)
+	{
+		FRouteEvent Event;
+		Event.EventAction = SetEvent.EventAction;
+		const float MinPercentTrigger = SetEvent.MinPercentTrigger <= SetEvent.MaxPercentTrigger ? SetEvent.MinPercentTrigger : SetEvent.MaxPercentTrigger;
+		const float MaxPercentTrigger = SetEvent.MinPercentTrigger <= SetEvent.MaxPercentTrigger ? SetEvent.MaxPercentTrigger : SetEvent.MinPercentTrigger;
+		Event.PercentTrigger = FMath::FRandRange(MinPercentTrigger, MaxPercentTrigger);
+		Event.bTriggered = false;
+		RouteEvents.Add(Event);
+	}
+	
+	RouteEvents.Sort([](const FRouteEvent& A, const FRouteEvent& B) {return A.PercentTrigger < B.PercentTrigger;});
+	for (int i = 0; i < RouteEvents.Num(); i++)
+		UE_LOG(LogTemp, Log, TEXT("Route Event: %f"), RouteEvents[i].PercentTrigger);
+	CurrentEventIndex = 0;
+}
+
+/**
+ * Checks if a route event should trigger, if so trigger it.
+ */
+void AShipRouter::CheckIfRouteEventTriggered()
+{
+	if (CurrentEventIndex >= RouteEvents.Num()) {return;}
+	
+	if (RouteEvents[CurrentEventIndex].PercentTrigger <= ShipProgress && !RouteEvents[CurrentEventIndex].bTriggered)
+	{
+		RouteEvents[CurrentEventIndex].bTriggered = true;
+		TriggerEvent(RouteEvents[CurrentEventIndex].EventAction);
+		CurrentEventIndex++;
+	}
+}
+
+/**
+ * --To be implemented in Children--
+ * 
+ * What happens when a route event is triggered.
+ * @param EventAction The action of the event.
+ */
+void AShipRouter::TriggerEvent(const FGameplayTag EventAction)
+{
 }
 
 void AShipRouter::BeginPlay()
@@ -78,6 +144,8 @@ void AShipRouter::BeginPlay()
 	{
 		SplineLength = Spline->GetSplineLength();
 	}
+	
+	InitRouteEvents();
 	
 	Ship = ShipRef.Get();
 	
@@ -91,6 +159,8 @@ void AShipRouter::BeginPlay()
 }
 
 /**
+ * --To be implemented in Children--
+ *
  * What happens when the ship reaches the end of the route.
  */
 void AShipRouter::Success()
@@ -99,6 +169,8 @@ void AShipRouter::Success()
 }
 
 /**
+ * --To be implemented in Children--
+ *
  * What happens when the ship fails the route.
  */
 void AShipRouter::Failure()
