@@ -39,6 +39,10 @@ FTransform AShipRouter::GetTransformAtPercent(const float Alpha) const
 	return Ret;
 }
 
+/**
+ * Adds progress to the ship along the route
+ * @param DeltaProgress Amount of progress to add
+ */
 void AShipRouter::AddShipProgress(const float DeltaProgress)
 {
 	ShipProgress += DeltaProgress;
@@ -63,24 +67,9 @@ void AShipRouter::AddShipProgress(const float DeltaProgress)
  */
 void AShipRouter::BeginRoute() const
 {
-	switch (RouteType) {
-	case EFlightType::Launch:
-		if (!FlightLevel.ToSoftObjectPath().IsValid())
-		{
-			UE_LOG(LogTemp, Fatal, TEXT("AShipRouter::BeginRoute(): Invalid FlightLevel reference"));
-		}
-		break;
-	case EFlightType::Flight:
-		const IShipCommunication* Communication = Cast<IShipCommunication>(Ship);
-		if (Communication)
-		{
-			Communication->Execute_BeginFlightSequence(Ship);
-		}
-		break;
-	}
+
 }
 
-// Called when the game starts or when spawned
 void AShipRouter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -102,70 +91,17 @@ void AShipRouter::BeginPlay()
 }
 
 /**
- * What happens when the ship reaches the end of the flight route.
+ * What happens when the ship reaches the end of the route.
  */
 void AShipRouter::Success()
 {
 	SuccessDelegate.Broadcast();
-	
-	switch (RouteType) {
-	case EFlightType::Launch:
-		
-		//Launch Complete, load flight level
-		
-		if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
-		{
-			Subsystem->SaveGame();
-		}
-		
-		if (ULevelManagerSubsystem* Subsystem = GetGameInstance()->GetSubsystem<ULevelManagerSubsystem>())
-		{
-			Subsystem->LoadLevel(FlightLevel);
-		}
-		break;
-		
-	case EFlightType::Flight:
-		
-		//Game Won
-		
-		
-		
-		break;
-	}
-
 }
 
 /**
- * What happens when the ship fails the flight route.
+ * What happens when the ship fails the route.
  */
 void AShipRouter::Failure()
 {
 	FailureDelegate.Broadcast();
-	
-	switch (RouteType) {
-	case EFlightType::Launch:
-		break;
-	case EFlightType::Flight:
-		const TSoftObjectPtr<UWorld> LevelToLoad = GetRandomLevel();
-	
-		if (ULevelManagerSubsystem* Subsystem = GetGameInstance()->GetSubsystem<ULevelManagerSubsystem>())
-		{
-			Subsystem->LoadLevel(LevelToLoad);
-		}
-		break;
-	}
-	
-}
-
-TSoftObjectPtr<UWorld> AShipRouter::GetRandomLevel() const
-{
-	if (!LevelsDT) {return nullptr;}
-	TArray<FName> RowNames = LevelsDT->GetRowNames();
-	
-	if (RowNames.Num() == 0) {return nullptr;}
-	static const FString Context = TEXT("Fetching random level");
-	
-	TSoftObjectPtr<UWorld> Level = LevelsDT->FindRow<FTRB_Levels>(RowNames[FMath::RandRange(0, RowNames.Num() - 1)], Context)->Level;
-	
-	return Level;
 }

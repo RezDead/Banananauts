@@ -20,10 +20,10 @@ enum class EFlightType : uint8
 /**
  * Handles the route, flight, and launch of the ship.
  *
- * Last Edited:10/17/2026
+ * Last Edited:10/18/2026
  * Author: Julian Kroeger-Miller
  */
-UCLASS()
+UCLASS(Abstract)
 class BANANANAUTS_API AShipRouter : public AActor
 {
 	GENERATED_BODY()
@@ -43,8 +43,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FFailureDelegate FailureDelegate;
 	
-	void Success();
-	void Failure();
+	virtual void Success();
+	virtual void Failure();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -54,22 +54,15 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	float ShipProgress = 0;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default")
 	EFlightType RouteType = EFlightType::Launch;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
 	TSoftObjectPtr<AActor> ShipRef;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
-	TSoftObjectPtr<UWorld> FlightLevel = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
-	UDataTable* LevelsDT;
 	
 	UPROPERTY()
 	AActor* Ship;
 	
 	float SplineLength;
 	
-private:
-	void BeginRoute() const;
-	
-	TSoftObjectPtr<UWorld> GetRandomLevel() const;
+	virtual void BeginRoute() const;
 };
