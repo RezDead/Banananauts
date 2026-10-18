@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
+#include "Banananauts/Data/Save/SaveData.h"
 #include "Banananauts/Enums/BurnStatus.h"
 #include "Banananauts/GAS/Attributes/ShipSegmentAttributes.h"
 #include "Banananauts/Interfaces/AttachableSegment.h"
+#include "Banananauts/Interfaces/Saveable.h"
 #include "UObject/Object.h"
 #include "ShipSegmentManager.generated.h"
 
@@ -31,7 +33,7 @@ struct FEffectArrayWrapper
  */
 UCLASS(PrioritizeCategories="Default")
 class BANANANAUTS_API AShipSegmentManager : public AActor, public IAbilitySystemInterface, public IAttachableSegment,
-                                            public IGameplayTagAssetInterface
+                                            public IGameplayTagAssetInterface, public ISaveable
 {
 	GENERATED_BODY()
 	
@@ -52,8 +54,17 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Items")
 	TArray<AActor*> GetAttachedItems() const;
+	
+	/**
+	 * Saving/Loading
+	 */
+	virtual void OnSaveGame_Implementation(USaveData* SaveGameObject) override;
+	virtual void OnLoadGame_Implementation(USaveData* SaveGameObject) override;
+	virtual void InitSaveSubsystem_Implementation() override;
+	
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
 	void InitAttributes() const;
@@ -66,15 +77,16 @@ private:
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	float MaxHeat = 0.0f;
-	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	float MaxHeatAblation = 0.0f;
-
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	int MaxBananas = 0;
 	
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	TMap<AActor*, FEffectArrayWrapper> AttachedEffects;
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
+	EShipSection SegmentType;
 	
 	UPROPERTY (BlueprintReadOnly, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	AActor* ShipRef;

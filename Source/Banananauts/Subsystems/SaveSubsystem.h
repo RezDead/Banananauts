@@ -9,7 +9,7 @@
 /**
  * Manages the save data for the game.
  * 
- * Last Edited: 10/16/2026
+ * Last Edited: 10/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -29,15 +29,22 @@ public:
 	void LoadGame();
 	
 	UFUNCTION(BlueprintCallable)
-	void RegisterSaveable(TScriptInterface<ISaveable> Saveable);
+	void RegisterSaveable(AActor* Saveable);
 	
 	UFUNCTION(BlueprintCallable)
-	void UnregisterSaveable(TScriptInterface<ISaveable> Saveable);
+	void UnregisterSaveable(AActor* Saveable);
+	
+	UFUNCTION(BlueprintCallable)
+	void ClearSaveData();
 	
 protected:
 	UPROPERTY()
 	USaveData* SaveData;
 	
-	TArray<TWeakInterfacePtr<ISaveable>> RegisteredSaveables;
+	UPROPERTY()
+	TSet<AActor*> RegisteredSaveables;
+	
+private:
+	bool bLoadOnStart;
 	
 };

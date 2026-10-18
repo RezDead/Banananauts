@@ -6,7 +6,7 @@
 #include "Saveable.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE()
+UINTERFACE(BlueprintType)
 class USaveable : public UInterface
 {
 	GENERATED_BODY()
@@ -15,7 +15,7 @@ class USaveable : public UInterface
 /**
  * Interface for objects that can be saved. The save system calls functions provided by this interface.
  * 
- * Last Edited: 10/16/2026
+ * Last Edited: 10/17/2026
  * Author: Julian Kroeger-Miller
  */
 class BANANANAUTS_API ISaveable
@@ -24,8 +24,13 @@ class BANANANAUTS_API ISaveable
 
 public:
 	// Adds save data to the save game.
-	virtual void OnSaveGame(USaveData* SaveGameObject) = 0;
+	UFUNCTION(BlueprintNativeEvent)
+	void OnSaveGame(USaveData* SaveGameObject);
 	
 	// Loads save data from the save game.
-	virtual void OnLoadGame(USaveData* SaveGameObject) = 0;
+	UFUNCTION(BlueprintNativeEvent)
+	void OnLoadGame(USaveData* SaveGameObject);
+
+	UFUNCTION(BlueprintNativeEvent)
+	void InitSaveSubsystem();
 };

@@ -3,7 +3,7 @@
 
 USaveSubsystem::USaveSubsystem()
 {
-	
+	bLoadOnStart = true;
 }
 
 void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -19,14 +19,17 @@ void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		UGameplayStatics::SaveGameToSlot(SaveData, TEXT("Slot0"), 0);
 	}
 	
-	FTSTicker::GetCoreTicker().AddTicker(
-		FTickerDelegate::CreateWeakLambda(this, [this](float)
-		{
-			this->LoadGame(); 
-			return false;	// one-shot
-		}),
-	0.0f
-	);
+	if (bLoadOnStart)
+	{
+		FTSTicker::GetCoreTicker().AddTicker(
+			FTickerDelegate::CreateWeakLambda(this, [this](float)
+			{
+				this->LoadGame(); 
+				return false;	// one-shot
+			}),
+		0.0f
+		);
+	}
 }
 
 /**
@@ -50,10 +53,7 @@ void USaveSubsystem::SaveGame()
 	
 	for (const auto& Saveable : RegisteredSaveables)
 	{
-		ISaveable* Interface = Saveable.Get();
-		if (!Interface) continue;
-		
-		Interface->OnSaveGame(SaveData);
+		ISaveable::Execute_OnSaveGame(Saveable, SaveData);
 	}
 	
 	UGameplayStatics::SaveGameToSlot(SaveData, TEXT("Slot0"), 0);
@@ -78,12 +78,9 @@ void USaveSubsystem::LoadGame()
 		return;
 	}
 	
-	for (auto Saveable : RegisteredSaveables)
+	for (const auto& Saveable : RegisteredSaveables)
 	{
-		ISaveable* Interface = Saveable.Get();
-		if (!Interface) continue;
-		
-		Interface->OnLoadGame(SaveData);
+		ISaveable::Execute_OnLoadGame(Saveable, SaveData);
 	}
 	
 	UE_LOG(LogTemp, Display, TEXT("Game Loaded"));
@@ -92,9 +89,9 @@ void USaveSubsystem::LoadGame()
 /**
  * Registers a saveable object with the save subsystem.
  */
-void USaveSubsystem::RegisterSaveable(TScriptInterface<ISaveable> Saveable)
+void USaveSubsystem::RegisterSaveable(AActor* Saveable)
 {
-	if (!Saveable || !IsValid(Saveable.GetObject()))
+	if (!IsValid(Saveable))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Invalid Saveable passed to RegisterSaveable"));
 		return;
@@ -106,9 +103,16 @@ void USaveSubsystem::RegisterSaveable(TScriptInterface<ISaveable> Saveable)
 /**
  * Unregisters a saveable object from the save subsystem.
  */
-void USaveSubsystem::UnregisterSaveable(TScriptInterface<ISaveable> Saveable)
+void USaveSubsystem::UnregisterSaveable(AActor* Saveable)
 {
-	if (!Saveable || !IsValid(Saveable.GetObject())) return;
+	if (!Saveable) return;
 	
 	RegisteredSaveables.Remove(Saveable);
+}
+
+void USaveSubsystem::ClearSaveData()
+{
+	SaveData = Cast<USaveData>(UGameplayStatics::CreateSaveGameObject(USaveData::StaticClass()));
+	
+	UGameplayStatics::SaveGameToSlot(SaveData, TEXT("Slot0"), 0);
 }

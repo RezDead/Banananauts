@@ -7,7 +7,7 @@
 /**
  * Struct for saving item data.
  * 
- * Last Edited: 10/16/2026
+ * Last Edited: 10/17/2026
  * Author: Julian Kroeger-Miller
  */
 USTRUCT(BlueprintType)
@@ -19,7 +19,7 @@ struct FItemSaveInfo
 	TSoftClassPtr<AItemBase> ItemType;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Item Data")
-	EShipSection AttachedTo;
+	EShipSection AttachedTo = EShipSection::Whole;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Item Data")
 	FTransform RelativeTransform;
 	

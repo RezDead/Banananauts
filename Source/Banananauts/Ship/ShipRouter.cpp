@@ -6,7 +6,7 @@
 #include "Banananauts/Data/Tables/TRB_Levels.h"
 #include "Banananauts/Interfaces/ShipCommunication.h"
 #include "Banananauts/Subsystems/LevelManagerSubsystem.h"
-#include "Kismet/GameplayStatics.h"
+#include "Banananauts/Subsystems/SaveSubsystem.h"
 
 // Sets default values
 AShipRouter::AShipRouter()
@@ -110,14 +110,24 @@ void AShipRouter::Success()
 	
 	switch (RouteType) {
 	case EFlightType::Launch:
+		
 		//Launch Complete, load flight level
+		
+		if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+		{
+			Subsystem->SaveGame();
+		}
+		
 		if (ULevelManagerSubsystem* Subsystem = GetGameInstance()->GetSubsystem<ULevelManagerSubsystem>())
 		{
 			Subsystem->LoadLevel(FlightLevel);
 		}
 		break;
+		
 	case EFlightType::Flight:
+		
 		//Game Won
+		
 		
 		
 		break;
