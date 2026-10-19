@@ -3,6 +3,8 @@
 
 #include "ShipSegmentManager.h"
 
+#include "Banananauts/Subsystems/SaveSubsystem.h"
+
 AShipSegmentManager::AShipSegmentManager()
 {
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
@@ -17,6 +19,53 @@ TArray<AActor*> AShipSegmentManager::GetAttachedItems() const
 	TArray<AActor*> Ret;
 	AttachedEffects.GetKeys(Ret);
 	return Ret;
+}
+
+void AShipSegmentManager::OnSaveGame_Implementation(USaveData* SaveGameObject)
+{
+	ISaveable::OnSaveGame_Implementation(SaveGameObject);
+
+	TArray<AActor*> AttachedItems = GetAttachedItems();
+	TArray<FItemSaveInfo> ItemSaveInfo;
+
+	for (const auto Item : AttachedItems)
+	{
+		FItemSaveInfo Info;
+		Info.ItemType = Item->GetClass();
+		Info.AttachedTo = SegmentType;
+
+		const FTransform ItemTransform = Item->GetActorTransform();
+		const FTransform SelfTransform = GetActorTransform();
+
+		Info.RelativeTransform = ItemTransform.GetRelativeTransform(SelfTransform);
+
+		ItemSaveInfo.Add(Info);
+	}
+
+	FSectionSaveWrapper Wrapper;
+	Wrapper.SectionItems = ItemSaveInfo;
+
+	SaveGameObject->ShipItems.Add(SegmentType, Wrapper);
+}
+
+void AShipSegmentManager::OnLoadGame_Implementation(USaveData* SaveGameObject)
+{
+	ISaveable::OnLoadGame_Implementation(SaveGameObject);
+
+	if (!SaveGameObject->ShipItems.Contains(SegmentType)) return;
+
+	TArray<FItemSaveInfo> ItemSaveInfo = SaveGameObject->ShipItems[SegmentType].SectionItems;
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	for (auto Item : ItemSaveInfo)
+	{
+		const FTransform SpawnTransform = Item.RelativeTransform * GetActorTransform();
+
+		AActor* SpawnedItem = GetWorld()->SpawnActor(Item.ItemType.Get(), &SpawnTransform, SpawnParams);
+		Execute_AttachItem(this, SpawnedItem);
+	}
 }
 
 void AShipSegmentManager::BeginPlay()
@@ -35,6 +84,32 @@ void AShipSegmentManager::BeginPlay()
 	InitAttributes();
 	
 	SetupAttributeListeners();
+	
+	Execute_InitSaveSubsystem(this);
+}
+
+void AShipSegmentManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->UnregisterSaveable(this);
+	}
+}
+
+void AShipSegmentManager::InitSaveSubsystem_Implementation()
+{
+	ISaveable::InitSaveSubsystem_Implementation();
+	
+	if (USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		SaveSubsystem->RegisterSaveable(this);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("ShipSegmentManager::InitSaveSubsystem - SaveSubsystem is null, how did we get here?"));
+	}
 }
 
 /**

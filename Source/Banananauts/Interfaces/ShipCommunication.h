@@ -24,5 +24,8 @@ class BANANANAUTS_API IShipCommunication
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void BeginLaunchSequence();
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void BeginFlightSequence();
 };

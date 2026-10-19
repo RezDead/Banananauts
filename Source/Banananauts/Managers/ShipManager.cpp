@@ -8,11 +8,18 @@
 #include "Banananauts/GAS/Effects/EModifyHeat.h"
 #include "Banananauts/Utilities/ShipStatsUtility.h"
 #include "Kismet/GameplayStatics.h"
+#include "Banananauts/Ship/RandomEventComponent.h"
+#include "Banananauts/Subsystems/LevelManagerSubsystem.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 
 AShipManager::AShipManager()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+	
+	LaunchDuration = 10.0f;
+	LaunchDelay = 2.5f;
 	
 	MinFlightTime = 7.5f;
 	FlightLinearGrowthRate = 0.05556f;
@@ -23,7 +30,6 @@ AShipManager::AShipManager()
 	
 	MaxMass = 0.0f;
 	MaxFuel = 0.0f;
-	AdhereStatusStrength = 5.0f;
 	
 	Status = EShipStatus::Clear;
 	
@@ -31,15 +37,6 @@ AShipManager::AShipManager()
 	StabilityThreshold = 0.0f;
 	HeatThreshold = 1.0f/3.0f;
 	
-	ClearEventFrequency = 1.0f;
-	WarningEventFrequency = 0.5f;
-	MinFirstEvent = 12.0f;
-	MaxFirstEvent = 50.0f;
-	MinRandBetweenEvent = 35.0f;
-	MaxRandBetweenEvent = 60.0f;
-	ToWarningEventDelay = 10.0f;
-	ToClearEventDelay = 5.0f;
-	bRandomEvents = false;
 	
 	DefineStateTransitions();
 	
@@ -48,6 +45,8 @@ AShipManager::AShipManager()
 		
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	Attributes = CreateDefaultSubobject<UShipAttributes>(TEXT("ShipAttributes"));
+	
+	RandomEventComponent = CreateDefaultSubobject<URandomEventComponent>(TEXT("RandomEventComponent"));
 
 	NoseSegmentComponent = CreateDefaultSubobject<UChildActorComponent>(TEXT("NoseSegment"));
 	BodySegmentComponent = CreateDefaultSubobject<UChildActorComponent>(TEXT("BodySegment"));
@@ -59,28 +58,59 @@ AShipManager::AShipManager()
 }
 
 /**
- * Initiates the flight of the ship and all in-flight systems.
+ * Begins launch sequence for the ship
  */
-void AShipManager::BeginFlightSequence_Implementation()
+void AShipManager::BeginLaunchSequence_Implementation()
 {
-	IShipCommunication::BeginFlightSequence_Implementation();
+	IShipCommunication::BeginLaunchSequence_Implementation();
 	
-	if (Attributes->GetMass() >= Attributes->GetMaxMass() || Attributes->GetFuel() <= 0)
+	/*if (Attributes->GetMass() >= Attributes->GetMaxMass() || Attributes->GetFuel() <= 0)
 	{
 		LaunchFailed();
 		return;
+	}*/
+
+	if (ULevelManagerSubsystem* Subsystem = GetGameInstance()->GetSubsystem<ULevelManagerSubsystem>())
+	{
+		Subsystem->StartPreloadingLevel(FlightLevel);
 	}
 	
-	bIsFlying = true;
+	InitShipRouter();
 	
+	FTimerHandle LaunchDelayHandle;
+	GetWorld()->GetTimerManager().SetTimer(LaunchDelayHandle, this, &AShipManager::Launch, LaunchDelay, false);
+}
+
+void AShipManager::InitShipRouter()
+{
 	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
 	if (!ShipRouter.IsValid())
 	{
 		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
 	}
 	
+	ShipRouter->SuccessDelegate.AddDynamic(this, &AShipManager::Success);
+	ShipRouter->FailureDelegate.AddDynamic(this, &AShipManager::Failure);
+}
+
+void AShipManager::Launch_Implementation()
+{
+	bIsLaunching = true;
+}
+
+/**
+ * Initiates the flight of the ship and all in-flight systems.
+ */
+void AShipManager::BeginFlightSequence_Implementation()
+{
+	IShipCommunication::BeginFlightSequence_Implementation();
+	
+	bIsFlying = true;
+	
+	InitShipRouter();
+	
 	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
-	BeginRandomEvents();
+	RandomEventComponent->BeginRandomEvents();
 }
 
 /**
@@ -165,33 +195,35 @@ void AShipManager::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
-	GEngine->AddOnScreenDebugMessage(-1, 0.1f, FColor::Red, FString::Printf(TEXT("Duration: %f Time Remaining: %f"), CurrEventTimerDuration, GetWorldTimerManager().GetTimerRemaining(RandomEventHandle)));
+	HandleLaunch(DeltaTime);
 	
+	HandleFlight(DeltaTime);
+}
+
+void AShipManager::HandleFlight(const float DeltaTime) const
+{
 	if (bIsFlying)
 	{
 		//Update ship progress
-		ShipProgress += UShipStatsUtility::CalculateShipProgressAdditive(Attributes->GetMass(), FuelComposition.Thrust,
-		                                                                 MinFlightTime, FlightLinearGrowthRate, DeltaTime);
+		const float DeltaProgress = UShipStatsUtility::CalculateShipProgressAdditive(Attributes->GetMass(), FuelComposition.Thrust,
+			MinFlightTime, FlightLinearGrowthRate, DeltaTime);
 		
-		if (ShipProgress >= 1)
-		{
-			const FTransform NewTransform = ShipRouter->GetTransformAtPercent(1.0f);
-			SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
-			
-			Success();
-			
-			return;
-		}
-		
-		//Update position
-		const FTransform NewTransform = ShipRouter->GetTransformAtPercent(ShipProgress);
-		SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
+		ShipRouter->AddShipProgress(DeltaProgress);
 		
 		ConsumeFuel(DeltaTime);
 		
-		// if (Attributes->GetFuel() <= 0)
-		// 	Failure();
+		/*if (Attributes->GetFuel() <= 0)
+			ShipRouter->Failure();*/
+	}
+}
+
+void AShipManager::HandleLaunch(const float DeltaTime) const
+{
+	if (bIsLaunching)
+	{
+		const float DeltaProgress = DeltaTime * 1/LaunchDuration;
 		
+		ShipRouter->AddShipProgress(DeltaProgress);
 	}
 }
 
@@ -209,6 +241,8 @@ void AShipManager::BeginPlay()
 	SetupAttributeListeners();
 
 	UpdateStatus();
+	
+	RandomEventComponent->SetShipManager(this);
 }
 
 /**
@@ -381,7 +415,16 @@ void AShipManager::ConsumeFuel(const float& DeltaTime) const
  */
 void AShipManager::Success()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ShipManager::Success - Game Won, need to add implementation"));
+	if (bIsLaunching)
+	{
+		//Launch Complete
+		
+	} 
+	else if (bIsFlying)
+	{
+		//Game Win
+		
+	}
 }
 
 /**
@@ -389,22 +432,8 @@ void AShipManager::Success()
  */
 void AShipManager::Failure()
 {
-	if (bIsChangingLevel)
-		return;
-	
 	UE_LOG(LogTemp, Display, TEXT("ShipManager::Failure - Game Lost"));
 	
-	bIsChangingLevel = true;
-	
-	const TSoftObjectPtr<UWorld> LevelToLoad = UShipStatsUtility::GetRandomLevel(LevelsDT);
-	
-	if (LevelToLoad.GetAssetName().IsEmpty())
-	{
-		UE_LOG(LogTemp, Error, TEXT("ShipManager::Failure - Invalid level to load, make sure Levels DT is valid"));
-		return;
-	}
-	
-	UGameplayStatics::OpenLevelBySoftObjectPtr(GetWorld(), LevelToLoad);
 }
 
 /**
@@ -444,56 +473,32 @@ void AShipManager::DefineStateTransitions()
 
 void AShipManager::OnClearToWarning()
 {
-	//Update frequency of event if events active and not in forced event
-	if (!bRandomEvents || bForcedEvent) return;
-	
-	UpdateEventTimerRate(WarningEventFrequency);
+
 }
 
 void AShipManager::OnClearToFail()
 {
-	//If events active, clear timer
-	if (!bRandomEvents) return;
-	
-	GetWorldTimerManager().ClearTimer(RandomEventHandle);
+
 }
 
 void AShipManager::OnWarningToClear()
 {
-	//Begin warning to clear forced event if events active and not in forced event
-	if (!bRandomEvents || bForcedEvent) return;
-	
-	bForcedEvent = true;
-	CurrEventTimerDuration = ToClearEventDelay;
-	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
+
 }
 
 void AShipManager::OnWarningToFail()
 {
-	//If events active, clear timer
-	if (!bRandomEvents) return;
-	
-	GetWorldTimerManager().ClearTimer(RandomEventHandle);
+
 }
 
 void AShipManager::OnFailToClear()
 {
-	//Begin Fail to clear forced event if events active and not in forced event
-	if (!bRandomEvents || bForcedEvent) return;
-	
-	bForcedEvent = true;
-	CurrEventTimerDuration = ToClearEventDelay;
-	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
+
 }
 
 void AShipManager::OnFailToWarning()
 {
-	//Begin fail to warning forced event if events active and not in forced event
-	if (!bRandomEvents || bForcedEvent) return;
-	
-	bForcedEvent = true;
-	CurrEventTimerDuration = ToWarningEventDelay;
-	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, CurrEventTimerDuration, false);
+
 }
 
 /**
@@ -504,6 +509,7 @@ void AShipManager::SetStatus(const EShipStatus NewStatus)
 {
 	if (Status == NewStatus) return;
 	
+	const EShipStatus OldStatus = Status;
 	const FTransitionKey Key = GetTransitionKey(Status, NewStatus);
 
 	// Check if illegal state swap
@@ -519,6 +525,7 @@ void AShipManager::SetStatus(const EShipStatus NewStatus)
 	// Execute the code mapped to this path
 	TransitionRegistry[Key]();
 	
+	OnShipStatusChanged.Broadcast(OldStatus, NewStatus);
 }
 
 /**
@@ -573,78 +580,9 @@ bool AShipManager::CheckAttributeStatus() const
 	return false;
 }
 
-/**
- * Begins the random events timer
- */
-void AShipManager::BeginRandomEvents()
+void AShipManager::StartRandomEvent() const
 {
-	CurrEventTimerDuration = FMath::RandRange(MinFirstEvent, MaxFirstEvent);
-	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::FirstEvent, CurrEventTimerDuration, false);
-}
-
-/**
- * Begins the next random event based on the current status of the ship.
- */
-void AShipManager::StartRandomEventTimer()
-{
-	float Duration = 0.0f;
-	bForcedEvent = false;
-	
-	switch (Status) {
-	case EShipStatus::Clear:
-		CurrEventTimerDuration = FMath::RandRange(MinRandBetweenEvent, MaxRandBetweenEvent);
-		Duration = CurrEventTimerDuration * (1/ClearEventFrequency);
-		break;
-		
-	case EShipStatus::Warning:
-		CurrEventTimerDuration =  FMath::RandRange(MinRandBetweenEvent, MaxRandBetweenEvent);
-		Duration = CurrEventTimerDuration * (1/WarningEventFrequency);
-		break;
-		
-	case EShipStatus::Fail:
-		CurrEventTimerDuration = 0.0f;
-		break;
-	}
-	
-	if (CurrEventTimerDuration > 0)
-	{
-		GetWorldTimerManager().ClearTimer(RandomEventHandle);
-		GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, Duration, false);
-	}
-}
-
-/**
- * First event that occurs
- */
-void AShipManager::FirstEvent()
-{
-	bRandomEvents = true;
-	RandomEvent();
-}
-
-/**
- * What happens when a random event occurs
- */
-void AShipManager::RandomEvent()
-{
-	PopOffEvent(EShipSection::Whole, 1);
-	
-	StartRandomEventTimer();
-}
-
-/**
- * Updates the rate of the current random event timer.
- * @param NewRate The rate the timer will now be set to.
- */
-void AShipManager::UpdateEventTimerRate(const float NewRate)
-{
-	float RemainingTime = GetWorldTimerManager().GetTimerRemaining(RandomEventHandle);
-	float PercentRemaining = RemainingTime / CurrEventTimerDuration;
-	float NewDuration = CurrEventTimerDuration * PercentRemaining * (1/NewRate);
-	
-	GetWorldTimerManager().ClearTimer(RandomEventHandle);
-	GetWorldTimerManager().SetTimer(RandomEventHandle, this, &AShipManager::RandomEvent, NewDuration, false);
-
+	RandomEventComponent->BeginRandomEvents();
 }
 
 /**
@@ -652,7 +590,7 @@ void AShipManager::UpdateEventTimerRate(const float NewRate)
  * @param Category Section to active event
  * @param Amount Number of events
  */
-void AShipManager::PopOffEvent(const EShipSection Category, const int Amount) const
+void AShipManager::TriggerEvent(const EShipSection Category, const int Amount) const
 {
 	UShipStatsUtility::PopOffEvent(Category, Segments, Amount);
 }

@@ -7,10 +7,20 @@
 #include "GameFramework/Actor.h"
 #include "ShipRouter.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSuccessDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFailureDelegate);
+
+UENUM(BlueprintType)
+enum class EFlightType : uint8
+{
+	Launch,
+	Flight
+};
+
 /**
- * Route on which a ship will take during flight.
+ * Handles the route, flight, and launch of the ship.
  *
- * Last Edited: 9/17/2026
+ * Last Edited:10/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -25,11 +35,41 @@ public:
 	USplineComponent* Spline;
 	
 	UFUNCTION(BlueprintCallable)
-	FTransform GetTransformAtPercent(float Alpha) const;
+	void AddShipProgress(const float DeltaProgress);
+
+	//Delegates used to signal others that success/fail is coming
+	UPROPERTY(BlueprintAssignable)
+	FSuccessDelegate SuccessDelegate;
+	UPROPERTY(BlueprintAssignable)
+	FFailureDelegate FailureDelegate;
+	
+	void Success();
+	void Failure();
 	
 protected:
 	virtual void BeginPlay() override;
 	
-private:
+	FTransform GetTransformAtPercent(float Alpha) const;
+	
+	UPROPERTY(BlueprintReadOnly)
+	float ShipProgress = 0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
+	EFlightType RouteType = EFlightType::Launch;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
+	TSoftObjectPtr<AActor> ShipRef;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
+	TSoftObjectPtr<UWorld> FlightLevel = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
+	UDataTable* LevelsDT;
+	
+	UPROPERTY()
+	AActor* Ship;
+	
 	float SplineLength;
+	
+private:
+	void BeginRoute() const;
+	
+	TSoftObjectPtr<UWorld> GetRandomLevel() const;
 };

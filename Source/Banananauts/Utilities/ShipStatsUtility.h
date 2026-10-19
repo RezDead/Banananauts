@@ -11,7 +11,7 @@
 /**
  * Utility class for calculating ship stats/data and certain functions.
  * 
- * Last Edited: 10/12/2026
+ * Last Edited: 10/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -30,8 +30,6 @@ public:
 	
 	static void PopOffEvent(const EShipSection Section,
 	                        const TMap<EShipSection, AShipSegmentManager*>& Segments, const int Amount);
-	
-	static 	TSoftObjectPtr<UWorld> GetRandomLevel(const UDataTable* LevelsDT);
 	
 	static float CalculateHeatMult(const AShipSegmentManager* Segment);
 	

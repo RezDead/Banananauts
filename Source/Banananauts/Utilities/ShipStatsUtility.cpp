@@ -3,7 +3,7 @@
 
 #include "ShipStatsUtility.h"
 
-#include "Banananauts/Data/TRB_Levels.h"
+#include "Banananauts/Data/Tables/TRB_Levels.h"
 #include "Banananauts/GAS/Attributes/Items/ItemStability.h"
 #include "Banananauts/GAS/Effects/EModifyBananas.h"
 
@@ -146,20 +146,6 @@ void UShipStatsUtility::PopOffEvent(const EShipSection Section, const TMap<EShip
 		if (TotalWeight <= 0 || AttachedItems.Num() <= 0) {break;}
 		PopOffItem(AttachedItems, TotalWeight, Weight);
 	}
-}
-
-TSoftObjectPtr<UWorld> UShipStatsUtility::GetRandomLevel(const UDataTable* LevelsDT)
-{
-	if (!LevelsDT) {return nullptr;}
-	TArray<FName> RowNames = LevelsDT->GetRowNames();
-	
-	if (RowNames.Num() == 0) {return nullptr;}
-	static const FString Context = TEXT("Fetching random level");
-	
-	TSoftObjectPtr<UWorld> Level = LevelsDT->FindRow<FTRB_Levels>(RowNames[FMath::RandRange(0, RowNames.Num() - 1)], Context)->Level;
-	
-	return Level;
-	
 }
 
 /**

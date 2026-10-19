@@ -13,10 +13,14 @@
 #include "Banananauts/Structs/FuelComposition.h"
 #include "ShipManager.generated.h"
 
+class URandomEventComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnShipStatusChanged, EShipStatus, OldStatus, EShipStatus, NewStatus);
+
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 10/15/2026
+ * Last Edited: 10/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
@@ -32,6 +36,7 @@ public:
 	{ OutContainer = GameplayTags; }
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
+	virtual void BeginLaunchSequence_Implementation() override;
 	virtual void BeginFlightSequence_Implementation() override;
 	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
@@ -40,6 +45,12 @@ public:
 	bool AddBananas(int Amount) const;
 	
 	virtual void Tick(float DeltaTime) override;
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnShipStatusChanged OnShipStatusChanged;
+	
+	void TriggerEvent(const EShipSection Category, const int Amount) const;
+	EShipStatus GetStatus() const { return Status; }
 	
 protected:
 	virtual void BeginPlay() override;
@@ -61,6 +72,9 @@ protected:
     UShipAttributes* Attributes;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default")
 	FGameplayTagContainer GameplayTags;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	URandomEventComponent* RandomEventComponent;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default|Segments")
 	TObjectPtr<UChildActorComponent> NoseSegmentComponent;
@@ -93,16 +107,21 @@ protected:
 	float MaxMass = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats")
 	float MaxFuel = 0.0f;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Stats",
-		meta = (ToolTip = "Percentage chance of adhere status blocking pop-off"))
-	float AdhereStatusStrength = 0.0f;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Default|Launch")
+	bool bIsLaunching = false;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Launch")
+	TSoftObjectPtr<UWorld> FlightLevel = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Launch",
+		meta = (ToolTip = "The duration is seconds a launch takes", ClampMin = 1.0))
+	float LaunchDuration;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Launch")
+	float LaunchDelay;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
 	bool bIsFlying = false;
 	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
 	TWeakObjectPtr<AShipRouter> ShipRouter = nullptr;
-	UPROPERTY(BlueprintReadOnly, Category = "Default|Flight")
-	float ShipProgress = 0.0f;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Flight",
 		meta = (AllowPrivateAccess = "true", ToolTip = "The rate at which gallons of fuel is consumed per minute"))
 	float FuelBurnRate = 0.0f;
@@ -135,14 +154,24 @@ protected:
 	float GetStability() const;
 	UFUNCTION(BlueprintCallable, Category = "Stability")
 	float GetMaxStability() const;
-	
-	
+
 	/*
 	 * Initiation Stuff
 	 */
 	
 	void InitSegments();
 	void InitAttributes() const;
+	void InitShipRouter();
+	
+	/*
+	 * Flight/Launch
+	 */
+	
+	UFUNCTION(BlueprintNativeEvent)
+	void Launch();
+	
+	void HandleFlight(float DeltaTime) const;
+	void HandleLaunch(float DeltaTime) const;
 	
 	/*
 	 * Systems
@@ -163,10 +192,10 @@ protected:
 	 * Win/Fail
 	 */
 	
+	UFUNCTION()
 	void Success();
+	UFUNCTION()
 	void Failure();
-	
-	bool bIsChangingLevel = false;
 	
 	/*
 	 * Status
@@ -205,53 +234,15 @@ protected:
 	float HeatThreshold;
 	
 	/*
-	 * Events
-	 */
-	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events",
-		meta = (ToolTip = "Multipler for event timer when status is clear."))
-	float ClearEventFrequency;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events",
-		meta = (ToolTip = "Multipler for event timer when status is warning."))
-	float WarningEventFrequency;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
-	float MinFirstEvent;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
-	float MaxFirstEvent;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
-	float MinRandBetweenEvent;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
-	float MaxRandBetweenEvent;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
-	float ToWarningEventDelay;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Random Events")
-	float ToClearEventDelay;
-	float CurrEventTimerDuration = 0.0f;
-	
-	
-	FTimerHandle RandomEventHandle;
-	void BeginRandomEvents();
-	void StartRandomEventTimer();
-	void FirstEvent();
-	void RandomEvent();
-	
-	void UpdateEventTimerRate(const float NewRate);
-	
-	void PopOffEvent(const EShipSection Category, const int Amount) const;
-	
-	bool bRandomEvents;
-	bool bForcedEvent;
-	
-	/*
 	 * Testing
 	 */
 	
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void BeginFlight() {Execute_BeginFlightSequence(this);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
-	void PopOffTester() const {PopOffEvent(EShipSection::Whole, 1);}
+	void PopOffTester() const {TriggerEvent(EShipSection::Whole, 1);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
-	void StartRandomEvent(){{BeginRandomEvents();}};
+	void StartRandomEvent() const;
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void SetStateClear() {SetStatus(EShipStatus::Clear);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
