@@ -33,6 +33,8 @@ void AShipSegmentManager::BeginPlay()
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	
 	InitAttributes();
+	
+	SetupAttributeListeners();
 }
 
 /**
@@ -46,4 +48,40 @@ void AShipSegmentManager::InitAttributes() const
 	Attributes->InitMaxHeatAblation(MaxHeatAblation);
 	Attributes->InitBananas(0.0f);
 	Attributes->InitMaxBananas(MaxBananas);
+}
+
+/**
+ * Sets up attribute listeners.
+ */
+void AShipSegmentManager::SetupAttributeListeners()
+{
+	StabilityListener = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Attributes->GetStabilityAttribute()).AddUObject(this, &AShipSegmentManager::OnStabilityChanged);
+}
+
+void AShipSegmentManager::OnStabilityChanged(const FOnAttributeChangeData& Data) const
+{
+	if (Attributes->GetStability() > Attributes->GetMaxStability())
+	{
+		AddTagToAllItems(FGameplayTag::RequestGameplayTag(FName("Status.Adhered")));
+	}
+}
+
+/**
+ * Adds a tag to all attached items. However, it does not add duplicate tags.
+ */
+void AShipSegmentManager::AddTagToAllItems(const FGameplayTag Tag) const
+{
+	for (AActor* Item : GetAttachedItems())
+	{
+		UAbilitySystemComponent* ItemASC = nullptr;
+		if (const IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(Item))
+		{
+			ItemASC = ASCInterface->GetAbilitySystemComponent();
+		}
+		
+		if (!ItemASC) {continue;}
+		
+		if (ItemASC->HasMatchingGameplayTag(Tag)) {continue;}
+		ItemASC->AddLooseGameplayTag(Tag);
+	}
 }

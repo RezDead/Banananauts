@@ -45,4 +45,11 @@ private:
 	static void PopOffItem(TArray<AActor*>& AttachedItems, float& TotalWeight, TArray<float>& Weight);
 	static void CalculateWeightFromAttachedItems(const TArray<AActor*>& AttachedItems, TArray<float>& Weight,
 											 float& TotalWeight);
+	
+	static float AdheredEventBlockChance;
+	static bool AdheredPopCheck(const AActor* Item);
+	
+	static float NegativeDoubleChance;
+	static void StabilityEventHelper(const EShipSection& Section,
+							const TMap<EShipSection, AShipSegmentManager*>& Segments, int& Amount);
 };

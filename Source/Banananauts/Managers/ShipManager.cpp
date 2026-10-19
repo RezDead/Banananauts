@@ -65,6 +65,12 @@ void AShipManager::BeginFlightSequence_Implementation()
 {
 	IShipCommunication::BeginFlightSequence_Implementation();
 	
+	if (Attributes->GetMass() >= Attributes->GetMaxMass() || Attributes->GetFuel() <= 0)
+	{
+		LaunchFailed();
+		return;
+	}
+	
 	bIsFlying = true;
 	
 	ShipRouter = Cast<AShipRouter>(UGameplayStatics::GetActorOfClass(GetWorld(), AShipRouter::StaticClass()));
@@ -203,6 +209,14 @@ void AShipManager::BeginPlay()
 	SetupAttributeListeners();
 
 	UpdateStatus();
+}
+
+/**
+ * What happens when the ship fails to launch.
+ */
+void AShipManager::LaunchFailed_Implementation()
+{
+	
 }
 
 /**

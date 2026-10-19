@@ -45,6 +45,13 @@ protected:
 	virtual void BeginPlay() override;
 	
 	/*
+	 * Blueprint Implemented Funcs
+	 */
+	
+	UFUNCTION(BlueprintNativeEvent, Category = "Default|Flight")
+	void LaunchFailed();
+	
+	/*
 	 * Actor Components
 	 */
 	
