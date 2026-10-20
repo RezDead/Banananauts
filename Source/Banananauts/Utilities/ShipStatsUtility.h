@@ -28,7 +28,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ship|Stats")
 	static bool AddBananas(int& Amount, const TMap<EShipSection, AShipSegmentManager*>& Segments);
 	
-	static void PopOffEvent(const EShipSection Section,
+	static void TriggerEvent(const EShipSection Section,
 	                        const TMap<EShipSection, AShipSegmentManager*>& Segments, const int Amount);
 	
 	static float CalculateHeatMult(const AShipSegmentManager* Segment);

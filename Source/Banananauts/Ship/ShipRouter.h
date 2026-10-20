@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/Actor.h"
 #include "ShipRouter.generated.h"
@@ -17,13 +18,42 @@ enum class EFlightType : uint8
 	Flight
 };
 
+USTRUCT(BlueprintType)
+struct FSetRouteEvent
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (ClampMin = "0", ClampMax = "1"))
+	float MinPercentTrigger = 0.0f;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (ClampMin = "0", ClampMax = "1"))
+	float MaxPercentTrigger = 0.0f;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FGameplayTag EventAction;
+};
+
+USTRUCT(BlueprintType)
+struct FRouteEvent
+{
+	GENERATED_BODY()
+	
+	UPROPERTY()
+	float PercentTrigger = 0.0f;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FGameplayTag EventAction;
+	
+	UPROPERTY()
+	bool bTriggered = false;
+};
+
 /**
- * Handles the route, flight, and launch of the ship.
+ * Handles a ship route and events that occur along the way.
  *
- * Last Edited:10/17/2026
+ * Last Edited:10/19/2026
  * Author: Julian Kroeger-Miller
  */
-UCLASS()
+UCLASS(Abstract)
 class BANANANAUTS_API AShipRouter : public AActor
 {
 	GENERATED_BODY()
@@ -43,8 +73,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FFailureDelegate FailureDelegate;
 	
-	void Success();
-	void Failure();
+	virtual void Success();
+	virtual void Failure();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -55,21 +85,30 @@ protected:
 	float ShipProgress = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
+	TArray<FSetRouteEvent> SetRouteEvents;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default")
 	EFlightType RouteType = EFlightType::Launch;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
-	TSoftObjectPtr<AActor> ShipRef;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
-	TSoftObjectPtr<UWorld> FlightLevel = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
-	UDataTable* LevelsDT;
+	TSoftObjectPtr<AActor> ShipEditorRef;
 	
 	UPROPERTY()
-	AActor* Ship;
+	AActor* ShipRef;
 	
 	float SplineLength;
 	
-private:
-	void BeginRoute() const;
+	virtual void BeginRoute() const;
+
+	virtual void TriggerEvent(const FGameplayTag EventAction);
 	
-	TSoftObjectPtr<UWorld> GetRandomLevel() const;
+	UPROPERTY()
+	TArray<FRouteEvent> RouteEvents;
+	UPROPERTY()
+	int CurrentEventIndex = 0;
+	
+	UFUNCTION(CallInEditor, Category = "Default")
+	void ShowEventRanges();
+	
+private:
+	void InitRouteEvents();
+	void CheckIfRouteEventTriggered();
 };

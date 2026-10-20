@@ -20,7 +20,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnShipStatusChanged, EShipStatus, 
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 10/17/2026
+ * Last Edited: 10/19/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
@@ -49,7 +49,7 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnShipStatusChanged OnShipStatusChanged;
 	
-	void TriggerEvent(const EShipSection Category, const int Amount) const;
+	virtual void TriggerEvent_Implementation(const EEventType Type, const EShipSection Category, const int Amount) override;
 	EShipStatus GetStatus() const { return Status; }
 	
 protected:
@@ -240,7 +240,7 @@ protected:
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void BeginFlight() {Execute_BeginFlightSequence(this);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
-	void PopOffTester() const {TriggerEvent(EShipSection::Whole, 1);}
+	void PopOffTester() {IShipCommunication::Execute_TriggerEvent(this, EEventType::All, EShipSection::Whole, 1);}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void StartRandomEvent() const;
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")

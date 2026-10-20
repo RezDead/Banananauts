@@ -200,6 +200,19 @@ void AShipManager::Tick(const float DeltaTime)
 	HandleFlight(DeltaTime);
 }
 
+/**
+ * Triggers a specified number of events on a specific ship section
+ * @param Type Type of event to trigger
+ * @param Category Section to active event
+ * @param Amount Number of events
+ */
+void AShipManager::TriggerEvent_Implementation(const EEventType Type, const EShipSection Category, const int Amount)
+{
+	IShipCommunication::TriggerEvent_Implementation(Type, Category, Amount);
+	
+	UShipStatsUtility::TriggerEvent(Category, Segments, Amount);
+}
+
 void AShipManager::HandleFlight(const float DeltaTime) const
 {
 	if (bIsFlying)
@@ -583,14 +596,4 @@ bool AShipManager::CheckAttributeStatus() const
 void AShipManager::StartRandomEvent() const
 {
 	RandomEventComponent->BeginRandomEvents();
-}
-
-/**
- * Triggers a specified number of events on a specific ship section
- * @param Category Section to active event
- * @param Amount Number of events
- */
-void AShipManager::TriggerEvent(const EShipSection Category, const int Amount) const
-{
-	UShipStatsUtility::PopOffEvent(Category, Segments, Amount);
 }
