@@ -4,12 +4,24 @@
 
 #include "CoreMinimal.h"
 #include "ShipRouter.h"
+#include "Banananauts/Enums/EventType.h"
 #include "FlightRouter.generated.h"
+
+USTRUCT(BlueprintType)
+struct FTurbulenceEvent
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (ClampMin = "0", ClampMax = "1"))
+	float Chance = 0.0f;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	EEventType Type = EEventType::All;
+};
 
 /**
  * Handles the route and flight of the ship.
  *
- * Last Edited:10/18/2026
+ * Last Edited:10/19/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -30,8 +42,21 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
 	UDataTable* LevelsDT;
 	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Turbulence")
+	TArray<FTurbulenceEvent> TurbulenceZone1Events;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Turbulence")
+	TArray<FTurbulenceEvent> TurbulenceZone2Events;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Turbulence")
+	TArray<FTurbulenceEvent> TurbulenceZone3Events;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default|Turbulence")
+	TArray<FTurbulenceEvent> FinalStretchEvents;
+	
+	virtual void TriggerEvent(const FGameplayTag EventAction) override;
+	
 	virtual void BeginRoute() const override;
 	
 private:
 	TSoftObjectPtr<UWorld> GetRandomLevel() const;
+
+	void TriggerTurbulenceEvents(const TArray<FTurbulenceEvent>& Events) const;
 };

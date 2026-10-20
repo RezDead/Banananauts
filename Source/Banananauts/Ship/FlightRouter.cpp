@@ -48,9 +48,9 @@ void AFlightRouter::BeginPlay()
  */
 void AFlightRouter::BeginRoute() const
 {
-	if (const IShipCommunication* Communication = Cast<IShipCommunication>(Ship))
+	if (const IShipCommunication* Communication = Cast<IShipCommunication>(ShipRef))
 	{
-		Communication->Execute_BeginFlightSequence(Ship);
+		Communication->Execute_BeginFlightSequence(ShipRef);
 	}
 }
 
@@ -65,5 +65,69 @@ TSoftObjectPtr<UWorld> AFlightRouter::GetRandomLevel() const
 	TSoftObjectPtr<UWorld> Level = LevelsDT->FindRow<FTRB_Levels>(RowNames[FMath::RandRange(0, RowNames.Num() - 1)], Context)->Level;
 	
 	return Level;
+}
+
+void AFlightRouter::TriggerEvent(const FGameplayTag EventAction)
+{
+	Super::TriggerEvent(EventAction);
+	
+	FGameplayTagContainer EventTag;
+	EventTag.AddTag(EventAction);
+	
+	if (!EventTag.HasTag(FGameplayTag::RequestGameplayTag(FName("Event.Flight"))))
+	{
+		UE_LOG(LogTemp, Error, TEXT("FlightRouter::TriggerEvent - Invalid event tag, no event triggered"));
+		return;
+	}
+	
+	if (EventTag.HasTagExact(FGameplayTag::RequestGameplayTag(FName("Event.Flight.Turbulence.1"))))
+	{
+		TriggerTurbulenceEvents(TurbulenceZone1Events);
+	}
+	else if (EventTag.HasTagExact(FGameplayTag::RequestGameplayTag(FName("Event.Flight.Turbulence.2"))))
+	{
+		TriggerTurbulenceEvents(TurbulenceZone2Events);
+	}
+	else if (EventTag.HasTagExact(FGameplayTag::RequestGameplayTag(FName("Event.Flight.Turbulence.3"))))
+	{
+		TriggerTurbulenceEvents(TurbulenceZone3Events);
+	}
+	else if (EventTag.HasTagExact(FGameplayTag::RequestGameplayTag(FName("Event.Flight.FinalStretch"))))
+	{
+		TriggerTurbulenceEvents(FinalStretchEvents);
+	}
+	
+}
+
+
+void AFlightRouter::TriggerTurbulenceEvents(const TArray<FTurbulenceEvent>& Events) const
+{
+	if (ShipRef == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("FlightRouter::TriggerTurbulenceEvents - ShipRef is null"));
+		return;
+	}
+	
+	TMap<EEventType, int> EventsToTrigger;
+
+	for (const auto& Event : Events)
+	{
+		//If fail chance check, continue
+		if (FMath::FRandRange(0.0f, 1.0f) > Event.Chance)
+			continue;
+		
+		if (!EventsToTrigger.Contains(Event.Type))
+		{
+			EventsToTrigger.Add(Event.Type, 1);
+			continue;
+		}
+		
+		EventsToTrigger[Event.Type]++;
+	}
+	
+	for (const auto& Event : EventsToTrigger)
+	{
+		IShipCommunication::Execute_TriggerEvent(ShipRef, Event.Key, EShipSection::Whole, Event.Value);
+	}
 }
 

@@ -50,7 +50,7 @@ struct FRouteEvent
 /**
  * Handles a ship route and events that occur along the way.
  *
- * Last Edited:10/18/2026
+ * Last Edited:10/19/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(Abstract)
@@ -89,10 +89,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default")
 	EFlightType RouteType = EFlightType::Launch;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
-	TSoftObjectPtr<AActor> ShipRef;
+	TSoftObjectPtr<AActor> ShipEditorRef;
 	
 	UPROPERTY()
-	AActor* Ship;
+	AActor* ShipRef;
 	
 	float SplineLength;
 	

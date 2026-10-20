@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Banananauts/Enums/EventType.h"
+#include "Banananauts/Enums/ShipSection.h"
 #include "UObject/Interface.h"
 #include "ShipCommunication.generated.h"
 
@@ -28,4 +30,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void BeginFlightSequence();
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void TriggerEvent(const EEventType Type, const EShipSection Category, const int Amount);
 };

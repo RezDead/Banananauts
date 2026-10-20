@@ -94,7 +94,7 @@ bool UShipStatsUtility::AddBananas(int& Amount, const TMap<EShipSection, AShipSe
  * @param Segments Map of ship segment references.
  * @param Amount Number of items to pop off.
  */
-void UShipStatsUtility::PopOffEvent(const EShipSection Section, const TMap<EShipSection, AShipSegmentManager*>& Segments, int Amount)
+void UShipStatsUtility::TriggerEvent(const EShipSection Section, const TMap<EShipSection, AShipSegmentManager*>& Segments, int Amount)
 {
 	if (Amount <= 0 || Segments.Num() <= 0)
 	{

@@ -47,7 +47,7 @@ void AShipRouter::AddShipProgress(const float DeltaProgress)
 	if (ShipProgress >= 1)
 	{
 		const FTransform NewTransform = GetTransformAtPercent(1.0f);
-		Ship->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
+		ShipRef->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
 			
 		Success();
 			
@@ -56,7 +56,7 @@ void AShipRouter::AddShipProgress(const float DeltaProgress)
 		
 	//Update position
 	const FTransform NewTransform = GetTransformAtPercent(ShipProgress);
-	Ship->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
+	ShipRef->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
 }
 
 /**
@@ -147,9 +147,9 @@ void AShipRouter::BeginPlay()
 	
 	InitRouteEvents();
 	
-	Ship = ShipRef.Get();
+	ShipRef = ShipEditorRef.Get();
 	
-	if (IsValid(Ship))
+	if (IsValid(ShipRef))
 	{
 		BeginRoute();
 	}

@@ -97,7 +97,7 @@ void URandomEventComponent::FirstEvent()
  */
 void URandomEventComponent::RandomEvent()
 {
-	ShipManager->TriggerEvent(EShipSection::Whole, 1);
+	IShipCommunication::Execute_TriggerEvent(ShipManager, EEventType::All, EShipSection::Whole, 1);
 	
 	StartRandomEventTimer();
 }
