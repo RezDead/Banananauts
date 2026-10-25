@@ -2,7 +2,7 @@
 
 
 #include "ShipSegmentManager.h"
-
+#include "Banananauts/Structs/ItemSaveInfo.h"
 #include "Banananauts/Subsystems/SaveSubsystem.h"
 
 AShipSegmentManager::AShipSegmentManager()
