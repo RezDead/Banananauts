@@ -3760,6 +3760,14 @@
 			"Type": "SymbolFile"
 		},
 		{
+			"Path": "$(EngineDir)/Plugins/Marketplace/Developer/RiderLink/Binaries/Win64/UnrealEditor-RiderAgentTools.dll",
+			"Type": "DynamicLibrary"
+		},
+		{
+			"Path": "$(EngineDir)/Plugins/Marketplace/Developer/RiderLink/Binaries/Win64/UnrealEditor-RiderAgentTools.pdb",
+			"Type": "SymbolFile"
+		},
+		{
 			"Path": "$(EngineDir)/Plugins/Marketplace/Developer/RiderLink/Binaries/Win64/UnrealEditor-RiderBlueprint.dll",
 			"Type": "DynamicLibrary"
 		},
