@@ -15,11 +15,18 @@ struct FTRB_ItemInformation : public FTableRowBase
 {
 	GENERATED_BODY()
 	
+	class AItemBase;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Class ref")
+	TSubclassOf<AItemBase> ItemClass = nullptr;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Display Name")
 	FName DisplayName = "";
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Model")
 	UStaticMesh* Mesh = nullptr;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Icon")
+	TObjectPtr<UTexture2D> Icon = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Type")
 	EItemTypes Type = EItemTypes::BoltOn;
