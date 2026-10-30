@@ -23,5 +23,6 @@ void USnapPointManager::DisplaySnapPoint(const FGameplayTag TypeTag)
 void USnapPointManager::StopDisplay()
 {
 	bDisplaying = false;
+	CurrentTag = FGameplayTag::EmptyTag;
 	StopDisplayEvent.Broadcast();
 }
