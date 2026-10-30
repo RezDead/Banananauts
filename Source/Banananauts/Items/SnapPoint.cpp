@@ -2,12 +2,9 @@
 
 
 #include "SnapPoint.h"
-#include "AbilitySystemComponent.h"
-
 
 ASnapPoint::ASnapPoint()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 }
 

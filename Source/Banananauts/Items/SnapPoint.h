@@ -9,16 +9,12 @@
 #include "SnapPoint.generated.h"
 
 UCLASS(Abstract)
-class BANANANAUTS_API ASnapPoint : public AActor, public IGameplayTagAssetInterface, public IAbilitySystemInterface
+class BANANANAUTS_API ASnapPoint : public AActor, public IGameplayTagAssetInterface
 {
 	GENERATED_BODY()
 
 public:
 	ASnapPoint();
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AS")
-	UAbilitySystemComponent* AbilitySystemComponent;
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default")
 	FGameplayTagContainer GameplayTags;
