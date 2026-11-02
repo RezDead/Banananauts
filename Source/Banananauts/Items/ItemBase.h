@@ -51,4 +51,5 @@ private:
 	void InitializeItemAttributes(const FTRB_ItemInformation* ItemRow);
 	void InitializeTypeTags(const EItemTypes& ItemType);
 	void LogItemAttributeErrors(const FTRB_ItemInformation* ItemRow) const;
+	void InitializeDepthColorValue();
 };
