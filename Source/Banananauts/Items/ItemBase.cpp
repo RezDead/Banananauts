@@ -155,13 +155,8 @@ void AItemBase::InitializeDepthColorValue()
 		ItemMesh->SetCustomDepthStencilValue(4);
 		return;
 	}
-	if (GameplayTags.HasTagExact(FGameplayTag::RequestGameplayTag(FName("Type.Item.BoltOn"))))
-	{
-		ItemMesh->SetCustomDepthStencilValue(1);
-		return;
-	}
 	
-	ItemMesh->SetCustomDepthStencilValue(0);
+	ItemMesh->SetCustomDepthStencilValue(1);
 }
 
 /**
