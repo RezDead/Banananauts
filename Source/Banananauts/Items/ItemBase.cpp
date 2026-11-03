@@ -4,6 +4,7 @@
 #include "ItemBase.h"
 #include "AbilitySystemComponent.h"
 #include "Banananauts/Data/Tables/TRB_ItemInformation.h"
+#include "Banananauts/Enums/ShipStatus.h"
 #include "Banananauts/GAS/Attributes/Items/ItemAblation.h"
 #include "Banananauts/GAS/Attributes/Items/ItemHeat.h"
 #include "Banananauts/GAS/Attributes/Items/ItemMass.h"
@@ -63,6 +64,7 @@ void AItemBase::BeginPlay()
 		LogItemAttributeErrors(ItemRow);
 	}
 
+	InitializeDepthColorValue();
 }
 
 // Called every frame
@@ -134,6 +136,27 @@ void AItemBase::LogItemAttributeErrors(const FTRB_ItemInformation* ItemRow) cons
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Item %s does not have a stability attribute tag but has a stability value."), *ItemRow->DisplayName.ToString());
 	}
+}
+
+void AItemBase::InitializeDepthColorValue()
+{
+	if (GameplayTags.HasTagExact(FGameplayTag::RequestGameplayTag(FName("Type.Item.Thruster"))))
+	{
+		ItemMesh->SetCustomDepthStencilValue(2);
+		return;
+	}
+	if (GameplayTags.HasTagExact(FGameplayTag::RequestGameplayTag(FName("Type.Item.Engine"))))
+	{
+		ItemMesh->SetCustomDepthStencilValue(3);
+		return;
+	}
+	if (GameplayTags.HasTagExact(FGameplayTag::RequestGameplayTag(FName("Properties.Item.Throwable"))))
+	{
+		ItemMesh->SetCustomDepthStencilValue(4);
+		return;
+	}
+	
+	ItemMesh->SetCustomDepthStencilValue(1);
 }
 
 /**
