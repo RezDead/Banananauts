@@ -48,4 +48,7 @@ struct FTRB_ItemInformation : public FTableRowBase
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Stability")
 	float Stability = 0.0f;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Fuel")
+	float Fuel = 0.0f;
 };

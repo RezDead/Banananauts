@@ -6,6 +6,7 @@
 #include "Banananauts/Data/Tables/TRB_ItemInformation.h"
 #include "Banananauts/Enums/ShipStatus.h"
 #include "Banananauts/GAS/Attributes/Items/ItemAblation.h"
+#include "Banananauts/GAS/Attributes/Items/ItemFuel.h"
 #include "Banananauts/GAS/Attributes/Items/ItemHeat.h"
 #include "Banananauts/GAS/Attributes/Items/ItemMass.h"
 #include "Banananauts/GAS/Attributes/Items/ItemStability.h"
@@ -110,6 +111,13 @@ void AItemBase::InitializeItemAttributes(const FTRB_ItemInformation* ItemRow)
 		StabilitySet->InitMaxStability(100.0f);
 		AbilitySystemComponent->AddAttributeSetSubobject(StabilitySet);
 	}
+	
+	if (HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Attribute.Item.Fuel"))))
+	{
+		UItemFuel* FuelSet = NewObject<UItemFuel>(this);
+		FuelSet->InitFuel(ItemRow->Fuel);
+		AbilitySystemComponent->AddAttributeSetSubobject(FuelSet);
+	}
 }
 
 /**
@@ -135,6 +143,10 @@ void AItemBase::LogItemAttributeErrors(const FTRB_ItemInformation* ItemRow) cons
 	if (!HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Attribute.Item.Stability"))) && ItemRow->Stability != 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Item %s does not have a stability attribute tag but has a stability value."), *ItemRow->DisplayName.ToString());
+	}
+	if (!HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag(FName("Attribute.Item.Fuel"))) && ItemRow->Fuel != 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Item %s does not have a fuel attribute tag but has a fuel value."), *ItemRow->DisplayName.ToString());
 	}
 }
 
