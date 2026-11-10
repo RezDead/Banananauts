@@ -35,4 +35,7 @@ public:
 	//These MUST be a UPROPERTY to save them
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, SaveGame)
 	TMap<EShipSection, FSectionSaveWrapper> ShipItems;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, SaveGame)
+	TMap<TSubclassOf<AItemBase>, int> FailItems;
 };

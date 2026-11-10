@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Banananauts/Data/Save/SaveData.h"
+#include "Banananauts/Enums/SaveType.h"
 #include "UObject/Interface.h"
 #include "Saveable.generated.h"
 
@@ -25,11 +26,11 @@ class BANANANAUTS_API ISaveable
 public:
 	// Adds save data to the save game.
 	UFUNCTION(BlueprintNativeEvent)
-	void OnSaveGame(USaveData* SaveGameObject);
+	void OnSaveGame(USaveData* SaveGameObject, ESaveType SaveEvent);
 	
 	// Loads save data from the save game.
 	UFUNCTION(BlueprintNativeEvent)
-	void OnLoadGame(USaveData* SaveGameObject);
+	void OnLoadGame(USaveData* SaveGameObject, ESaveType LoadEvent);
 
 	UFUNCTION(BlueprintNativeEvent)
 	void InitSaveSubsystem();
