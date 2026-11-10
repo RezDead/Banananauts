@@ -60,6 +60,8 @@ protected:
 	UPROPERTY()
 	TMap<ESaveType, FActorSetWrapper> RegisteredSaveables;
 	
+	void PreSaveUpdate(ESaveType SaveEvent) const;
+	
 private:
 	bool bLoadOnStart;
 	

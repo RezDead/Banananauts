@@ -6,6 +6,7 @@
 #include "Banananauts/Data/Tables/TRB_Levels.h"
 #include "Banananauts/Interfaces/ShipCommunication.h"
 #include "Banananauts/Subsystems/LevelManagerSubsystem.h"
+#include "Banananauts/Subsystems/SaveSubsystem.h"
 
 
 AFlightRouter::AFlightRouter()
@@ -29,6 +30,11 @@ void AFlightRouter::Success()
 void AFlightRouter::Failure()
 {
 	Super::Failure();
+	
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->UpdateAndCommitSave(ESaveType::Fail);
+	}
 	
 	const TSoftObjectPtr<UWorld> LevelToLoad = GetRandomLevel();
 	

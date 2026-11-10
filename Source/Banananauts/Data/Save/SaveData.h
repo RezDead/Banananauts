@@ -37,5 +37,5 @@ public:
 	TMap<EShipSection, FSectionSaveWrapper> ShipItems;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, SaveGame)
-	TMap<TSubclassOf<AItemBase>, int> FailItems;
+	TMap<TSoftClassPtr<AItemBase>, int> FailItems;
 };

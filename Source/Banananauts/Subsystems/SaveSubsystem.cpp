@@ -42,6 +42,8 @@ void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
  */
 void USaveSubsystem::UpdateToBeSavedData(const ESaveType SaveEvent)
 {
+	PreSaveUpdate(SaveEvent);
+	
 	const FActorSetWrapper* Saveables = RegisteredSaveables.Find(SaveEvent);
 	
 	if (!Saveables) return;
@@ -167,4 +169,29 @@ void USaveSubsystem::ClearSaveData()
 	SaveData = Cast<USaveData>(UGameplayStatics::CreateSaveGameObject(USaveData::StaticClass()));
 	
 	UGameplayStatics::SaveGameToSlot(SaveData, TEXT("Slot0"), 0);
+}
+
+/**
+ * Handles anything that has to happen on a save event before broadcasting the update.
+ * @param SaveEvent Save event occuring
+ */
+void USaveSubsystem::PreSaveUpdate(const ESaveType SaveEvent) const
+{
+	switch (SaveEvent) {
+	case ESaveType::Start:
+		SaveData->ShipItems.Empty();
+		SaveData->FailItems.Empty();
+		break;
+		
+	case ESaveType::Flight:
+		SaveData->ShipItems.Empty();
+		SaveData->FailItems.Empty();
+		break;
+		
+	case ESaveType::Fail:
+		SaveData->ShipItems.Empty();
+		SaveData->FailItems.Empty();
+		break;
+	}
+
 }

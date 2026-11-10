@@ -25,29 +25,16 @@ void AShipSegmentManager::OnSaveGame_Implementation(USaveData* SaveGameObject, c
 {
 	ISaveable::OnSaveGame_Implementation(SaveGameObject, SaveEvent);
 
-	if (SaveEvent != ESaveType::Flight) return;
-	
-	TArray<AActor*> AttachedItems = GetAttachedItems();
-	TArray<FItemSaveInfo> ItemSaveInfo;
-
-	for (const auto Item : AttachedItems)
-	{
-		FItemSaveInfo Info;
-		Info.ItemType = Item->GetClass();
-		Info.AttachedTo = SegmentType;
-
-		const FTransform ItemTransform = Item->GetActorTransform();
-		const FTransform SelfTransform = GetActorTransform();
-
-		Info.RelativeTransform = ItemTransform.GetRelativeTransform(SelfTransform);
-
-		ItemSaveInfo.Add(Info);
+	switch (SaveEvent) {
+	case ESaveType::Flight:
+		OnFlightSaveEvent(SaveGameObject);
+		break;
+	case ESaveType::Fail:
+		OnFailSaveEvent(SaveGameObject);
+		break;
+	default:;
 	}
 
-	FSectionSaveWrapper Wrapper;
-	Wrapper.SectionItems = ItemSaveInfo;
-
-	SaveGameObject->ShipItems.Add(SegmentType, Wrapper);
 }
 
 void AShipSegmentManager::OnLoadGame_Implementation(USaveData* SaveGameObject, ESaveType LoadEvent)
@@ -98,6 +85,44 @@ void AShipSegmentManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
 	{
 		Subsystem->UnregisterSaveable(this, ESaveType::Flight);
+		Subsystem->UnregisterSaveable(this, ESaveType::Fail);
+	}
+}
+
+void AShipSegmentManager::OnFlightSaveEvent(USaveData* SaveGameObject) const
+{
+	TArray<AActor*> AttachedItems = GetAttachedItems();
+	TArray<FItemSaveInfo> ItemSaveInfo;
+
+	for (const auto Item : AttachedItems)
+	{
+		FItemSaveInfo Info;
+		Info.ItemType = Item->GetClass();
+		Info.AttachedTo = SegmentType;
+
+		const FTransform ItemTransform = Item->GetActorTransform();
+		const FTransform SelfTransform = GetActorTransform();
+
+		Info.RelativeTransform = ItemTransform.GetRelativeTransform(SelfTransform);
+
+		ItemSaveInfo.Add(Info);
+	}
+
+	FSectionSaveWrapper Wrapper;
+	Wrapper.SectionItems = ItemSaveInfo;
+
+	SaveGameObject->ShipItems.Add(SegmentType, Wrapper);
+}
+
+void AShipSegmentManager::OnFailSaveEvent(USaveData* SaveGameObject) const
+{
+	TArray<AActor*> AttachedItems = GetAttachedItems();
+	auto& FailItems = SaveGameObject->FailItems;
+	
+	for (const auto Item : AttachedItems)
+	{
+		int& ItemNum = FailItems.FindOrAdd(Item->GetClass());
+		ItemNum++;
 	}
 }
 
@@ -108,6 +133,7 @@ void AShipSegmentManager::InitSaveSubsystem_Implementation()
 	if (USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
 	{
 		SaveSubsystem->RegisterSaveable(this, ESaveType::Flight);
+		SaveSubsystem->RegisterSaveable(this, ESaveType::Fail);
 	}
 	else
 	{

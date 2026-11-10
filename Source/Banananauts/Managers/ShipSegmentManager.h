@@ -65,6 +65,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
+	void OnFlightSaveEvent(USaveData* SaveGameObject) const;
+	void OnFailSaveEvent(USaveData* SaveGameObject) const;
 
 private:
 	void InitAttributes() const;
