@@ -21,10 +21,12 @@ TArray<AActor*> AShipSegmentManager::GetAttachedItems() const
 	return Ret;
 }
 
-void AShipSegmentManager::OnSaveGame_Implementation(USaveData* SaveGameObject)
+void AShipSegmentManager::OnSaveGame_Implementation(USaveData* SaveGameObject, const ESaveType SaveEvent)
 {
-	ISaveable::OnSaveGame_Implementation(SaveGameObject);
+	ISaveable::OnSaveGame_Implementation(SaveGameObject, SaveEvent);
 
+	if (SaveEvent != ESaveType::Flight) return;
+	
 	TArray<AActor*> AttachedItems = GetAttachedItems();
 	TArray<FItemSaveInfo> ItemSaveInfo;
 
@@ -48,10 +50,11 @@ void AShipSegmentManager::OnSaveGame_Implementation(USaveData* SaveGameObject)
 	SaveGameObject->ShipItems.Add(SegmentType, Wrapper);
 }
 
-void AShipSegmentManager::OnLoadGame_Implementation(USaveData* SaveGameObject)
+void AShipSegmentManager::OnLoadGame_Implementation(USaveData* SaveGameObject, ESaveType LoadEvent)
 {
-	ISaveable::OnLoadGame_Implementation(SaveGameObject);
+	ISaveable::OnLoadGame_Implementation(SaveGameObject, LoadEvent);
 
+	if (LoadEvent != ESaveType::Flight) return;
 	if (!SaveGameObject->ShipItems.Contains(SegmentType)) return;
 
 	TArray<FItemSaveInfo> ItemSaveInfo = SaveGameObject->ShipItems[SegmentType].SectionItems;
@@ -94,7 +97,7 @@ void AShipSegmentManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	
 	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
 	{
-		Subsystem->UnregisterSaveable(this);
+		Subsystem->UnregisterSaveable(this, ESaveType::Flight);
 	}
 }
 
@@ -104,7 +107,7 @@ void AShipSegmentManager::InitSaveSubsystem_Implementation()
 	
 	if (USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
 	{
-		SaveSubsystem->RegisterSaveable(this);
+		SaveSubsystem->RegisterSaveable(this, ESaveType::Flight);
 	}
 	else
 	{

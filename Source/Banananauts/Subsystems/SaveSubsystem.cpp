@@ -24,7 +24,7 @@ void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		FTSTicker::GetCoreTicker().AddTicker(
 			FTickerDelegate::CreateWeakLambda(this, [this](float)
 			{
-				this->LoadGame(Start); 
+				this->LoadGame(ESaveType::Start); 
 				return false;	// one-shot
 			}),
 		0.0f
@@ -32,18 +32,29 @@ void USaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	}
 }
 
+/**
+ * Updates the current save data from an event type.
+ * 
+ * This does not save the data. It only updates the data to be saved.
+ * If you want to save the data, call CommitSave() or UpdateAndCommitSave(ESaveType SaveEvent).
+ * 
+ * @param SaveEvent Save event type to be triggered.
+ */
 void USaveSubsystem::UpdateToBeSavedData(const ESaveType SaveEvent)
 {
 	const FActorSetWrapper* Saveables = RegisteredSaveables.Find(SaveEvent);
 	
 	if (!Saveables) return;
 	
-	for (const auto& Saveable : *Saveables)
+	for (const auto& Saveable : Saveables->Actors)
 	{
 		ISaveable::Execute_OnSaveGame(Saveable, SaveData, SaveEvent);
 	}
 }
 
+/**
+ * Commits the current save data to disk.
+ */
 void USaveSubsystem::CommitSave()
 {
 	if (!IsValid(SaveData))
@@ -61,7 +72,10 @@ void USaveSubsystem::CommitSave()
 	UE_LOG(LogTemp, Display, TEXT("Game Saved"));
 }
 
-
+/**
+ * Updates the current save data based on an event type and commits it to disk.
+ * @param SaveEvent Save event type to be triggered.
+ */
 void USaveSubsystem::UpdateAndCommitSave(const ESaveType SaveEvent)
 {
 	if (!IsValid(SaveData))
@@ -100,7 +114,7 @@ void USaveSubsystem::LoadGame(const ESaveType LoadEvent)
 
 	if (const FActorSetWrapper* Saveables = RegisteredSaveables.Find(LoadEvent))
 	{
-		for (const auto& Saveable : *Saveables)
+		for (const auto& Saveable : Saveables->Actors)
 		{
 			ISaveable::Execute_OnLoadGame(Saveable, SaveData, LoadEvent);
 		}
@@ -145,6 +159,9 @@ void USaveSubsystem::UnregisterSaveable(AActor* Saveable, const ESaveType SaveEv
 	}
 }
 
+/**
+ * Clears the save data object from disk and memory.
+ */
 void USaveSubsystem::ClearSaveData()
 {
 	SaveData = Cast<USaveData>(UGameplayStatics::CreateSaveGameObject(USaveData::StaticClass()));

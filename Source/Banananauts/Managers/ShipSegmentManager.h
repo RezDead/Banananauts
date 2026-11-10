@@ -58,8 +58,8 @@ public:
 	/**
 	 * Saving/Loading
 	 */
-	virtual void OnSaveGame_Implementation(USaveData* SaveGameObject) override;
-	virtual void OnLoadGame_Implementation(USaveData* SaveGameObject) override;
+	virtual void OnSaveGame_Implementation(USaveData* SaveGameObject, ESaveType SaveEvent) override;
+	virtual void OnLoadGame_Implementation(USaveData* SaveGameObject, ESaveType LoadEvent) override;
 	virtual void InitSaveSubsystem_Implementation() override;
 	
 protected:
