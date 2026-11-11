@@ -75,20 +75,19 @@ void AShipSegmentManager::BeginPlay()
 	
 	SetupAttributeListeners();
 	
-	Execute_InitSaveSubsystem(this);
+	Execute_RegisterToSaveSubsystem(this);
 }
 
 void AShipSegmentManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	
-	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
-	{
-		Subsystem->UnregisterSaveable(this, ESaveType::Flight);
-		Subsystem->UnregisterSaveable(this, ESaveType::Fail);
-	}
+	Execute_UnregisterFromSaveSubsystem(this);
 }
 
+/**
+ * What happens on a flight save event.
+ */
 void AShipSegmentManager::OnFlightSaveEvent(USaveData* SaveGameObject) const
 {
 	TArray<AActor*> AttachedItems = GetAttachedItems();
@@ -114,6 +113,9 @@ void AShipSegmentManager::OnFlightSaveEvent(USaveData* SaveGameObject) const
 	SaveGameObject->ShipItems.Add(SegmentType, Wrapper);
 }
 
+/**
+ * What happens on a fail save event.
+ */
 void AShipSegmentManager::OnFailSaveEvent(USaveData* SaveGameObject) const
 {
 	TArray<AActor*> AttachedItems = GetAttachedItems();
@@ -126,9 +128,9 @@ void AShipSegmentManager::OnFailSaveEvent(USaveData* SaveGameObject) const
 	}
 }
 
-void AShipSegmentManager::InitSaveSubsystem_Implementation()
+void AShipSegmentManager::RegisterToSaveSubsystem_Implementation()
 {
-	ISaveable::InitSaveSubsystem_Implementation();
+	ISaveable::RegisterToSaveSubsystem_Implementation();
 	
 	if (USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
 	{
@@ -138,6 +140,17 @@ void AShipSegmentManager::InitSaveSubsystem_Implementation()
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("ShipSegmentManager::InitSaveSubsystem - SaveSubsystem is null, how did we get here?"));
+	}
+}
+
+void AShipSegmentManager::UnregisterFromSaveSubsystem_Implementation()
+{
+	ISaveable::UnregisterFromSaveSubsystem_Implementation();
+	
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->UnregisterSaveable(this, ESaveType::Flight);
+		Subsystem->UnregisterSaveable(this, ESaveType::Fail);
 	}
 }
 

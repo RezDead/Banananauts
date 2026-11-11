@@ -54,7 +54,7 @@ public:
 	void ClearSaveData();
 	
 protected:
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USaveData* SaveData;
 	
 	UPROPERTY()

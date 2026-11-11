@@ -25,13 +25,21 @@ class BANANANAUTS_API ISaveable
 
 public:
 	// Adds save data to the save game.
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnSaveGame(USaveData* SaveGameObject, ESaveType SaveEvent);
 	
 	// Loads save data from the save game.
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnLoadGame(USaveData* SaveGameObject, ESaveType LoadEvent);
 
-	UFUNCTION(BlueprintNativeEvent)
-	void InitSaveSubsystem();
+protected:
+	// Reminder to register this object with the save subsystem.
+	// Register should happen on begin play.
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void RegisterToSaveSubsystem();
+	
+	// Reminder to unregister this object with the save subsystem.
+	// Unregister should happen on end play.
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void UnregisterFromSaveSubsystem();
 };
