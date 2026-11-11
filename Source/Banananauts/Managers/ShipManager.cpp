@@ -449,7 +449,7 @@ void AShipManager::ConsumeFuel(const float& DeltaTime) const
 		return;
 	
 	//60 Converts minutes to seconds
-	const float ConsumedFuel = DeltaTime / (FuelBurnRate * 60);
+	const float ConsumedFuel = DeltaTime * FuelBurnRate / 60.0f;
 	
 	const FGameplayTag MagTag = FGameplayTag::RequestGameplayTag(FName("Data.Magnitude"));
 	if (!MagTag.IsValid())
