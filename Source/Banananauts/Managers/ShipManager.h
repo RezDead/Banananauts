@@ -38,6 +38,7 @@ public:
 	
 	virtual void BeginLaunchSequence_Implementation() override;
 	virtual void BeginFlightSequence_Implementation() override;
+	virtual AActor* GetSection_Implementation(const EShipSection Section) override;
 	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	bool UseBananas(int Amount) const;

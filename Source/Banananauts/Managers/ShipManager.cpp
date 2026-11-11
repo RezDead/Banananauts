@@ -2,7 +2,6 @@
 
 
 #include "ShipManager.h"
-
 #include "Banananauts/GAS/Attributes/Items/ItemStability.h"
 #include "Banananauts/GAS/Effects/EModifyFuel.h"
 #include "Banananauts/GAS/Effects/EModifyHeat.h"
@@ -11,8 +10,6 @@
 #include "Banananauts/Ship/RandomEventComponent.h"
 #include "Banananauts/Subsystems/LevelManagerSubsystem.h"
 #include "Banananauts/Subsystems/SaveSubsystem.h"
-#include "Engine/AssetManager.h"
-#include "Engine/StreamableManager.h"
 
 AShipManager::AShipManager()
 {
@@ -112,6 +109,28 @@ void AShipManager::BeginFlightSequence_Implementation()
 	
 	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
 	RandomEventComponent->BeginRandomEvents();
+}
+
+AActor* AShipManager::GetSection_Implementation(const EShipSection Section)
+{
+	IShipCommunication::GetSection_Implementation(Section);
+	
+	switch (Section) {
+	case EShipSection::Whole:
+		return this;
+		break;
+	case EShipSection::Nose:
+		return Nose;
+		break;
+	case EShipSection::Body:
+		return Body;
+		break;
+	case EShipSection::Tail:
+		return Tail;
+		break;
+	}
+
+	return nullptr;
 }
 
 /**
