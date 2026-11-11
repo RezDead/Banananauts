@@ -10,6 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Banananauts/Ship/RandomEventComponent.h"
 #include "Banananauts/Subsystems/LevelManagerSubsystem.h"
+#include "Banananauts/Subsystems/SaveSubsystem.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 
@@ -213,6 +214,42 @@ void AShipManager::TriggerEvent_Implementation(const EEventType Type, const EShi
 	UShipStatsUtility::TriggerEvent(Category, Segments, Amount);
 }
 
+void AShipManager::OnSaveGame_Implementation(USaveData* SaveGameObject, const ESaveType SaveEvent)
+{
+	ISaveable::OnSaveGame_Implementation(SaveGameObject, SaveEvent);
+	
+	if (SaveEvent != ESaveType::Flight) return;
+	
+	SaveGameObject->CurrentFuel = Attributes->GetFuel();
+}
+
+void AShipManager::OnLoadGame_Implementation(USaveData* SaveGameObject, const ESaveType LoadEvent)
+{
+	ISaveable::OnLoadGame_Implementation(SaveGameObject, LoadEvent);
+	
+	//Implemented in BP
+}
+
+void AShipManager::RegisterToSaveSubsystem_Implementation()
+{
+	ISaveable::RegisterToSaveSubsystem_Implementation();
+	
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->RegisterSaveable(this, ESaveType::Flight);
+	}
+}
+
+void AShipManager::UnregisterFromSaveSubsystem_Implementation()
+{
+	ISaveable::UnregisterFromSaveSubsystem_Implementation();
+	
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->UnregisterSaveable(this, ESaveType::Flight);
+	}
+}
+
 void AShipManager::HandleFlight(const float DeltaTime) const
 {
 	if (bIsFlying)
@@ -244,6 +281,8 @@ void AShipManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	Execute_RegisterToSaveSubsystem(this);
+	
 	InitSegments();
 	
 	if (AbilitySystemComponent)
@@ -256,6 +295,13 @@ void AShipManager::BeginPlay()
 	UpdateStatus();
 	
 	RandomEventComponent->SetShipManager(this);
+}
+
+void AShipManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	
+	Execute_UnregisterFromSaveSubsystem(this);
 }
 
 /**
