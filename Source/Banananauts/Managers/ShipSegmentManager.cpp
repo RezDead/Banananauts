@@ -41,26 +41,44 @@ void AShipSegmentManager::OnLoadGame_Implementation(USaveData* SaveGameObject, E
 {
 	ISaveable::OnLoadGame_Implementation(SaveGameObject, LoadEvent);
 
+	GEngine->AddOnScreenDebugMessage(3, 10.0f, FColor::Green, TEXT("Loaded segment."));
+	
 	if (LoadEvent != ESaveType::Flight) return;
 	if (!SaveGameObject->ShipItems.Contains(SegmentType)) return;
 
 	TArray<FItemSaveInfo> ItemSaveInfo = SaveGameObject->ShipItems[SegmentType].SectionItems;
 
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green, FString::Printf(TEXT("Item save info size: %d"), ItemSaveInfo.Num()));
+	
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	for (auto Item : ItemSaveInfo)
 	{
+		UClass* ItemClass = Item.ItemType.LoadSynchronous();
+		if (!ItemClass)
+		{
+			GEngine->AddOnScreenDebugMessage(1, 10.0f, FColor::Red, TEXT("Failed to load item class for spawning."));
+			UE_LOG(LogTemp, Warning, TEXT("Failed to load item class for spawning."));
+			continue;
+		}
+		
 		const FTransform SpawnTransform = Item.RelativeTransform * GetActorTransform();
 
-		AActor* SpawnedItem = GetWorld()->SpawnActor(Item.ItemType.Get(), &SpawnTransform, SpawnParams);
-		Execute_AttachItem(this, SpawnedItem);
+		AActor* SpawnedItem = GetWorld()->SpawnActor(ItemClass, &SpawnTransform, SpawnParams);
+		if (SpawnedItem)
+		{
+			Execute_AttachItem(this, SpawnedItem);
+		}
+		GEngine->AddOnScreenDebugMessage(2, 10.0f, FColor::Green, TEXT("Loaded item."));
 	}
 }
 
 void AShipSegmentManager::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green, FString::Printf(TEXT("Segment %s started."), *GetName()));
 	
 	ShipRef = GetParentActor();
 	
@@ -136,6 +154,7 @@ void AShipSegmentManager::RegisterToSaveSubsystem_Implementation()
 	{
 		SaveSubsystem->RegisterSaveable(this, ESaveType::Flight);
 		SaveSubsystem->RegisterSaveable(this, ESaveType::Fail);
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green, FString::Printf(TEXT("Registered segment %s to save subsystem."), *GetName()));
 	}
 	else
 	{
