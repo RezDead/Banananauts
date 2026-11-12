@@ -1,6 +1,4 @@
 ﻿#include "SaveSubsystem.h"
-
-#include "Banananauts/Enums/ShipSection.h"
 #include "Kismet/GameplayStatics.h"
 
 USaveSubsystem::USaveSubsystem()
@@ -91,7 +89,7 @@ void USaveSubsystem::UpdateAndCommitSave(const ESaveType SaveEvent)
 			return;
 		}
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Item save info size on save: %d"), SaveData->ShipItems[EShipSection::Body].SectionItems.Num()));
+	
 	UpdateToBeSavedData(SaveEvent);
 	
 	UGameplayStatics::SaveGameToSlot(SaveData, TEXT("Slot0"), 0);
@@ -115,8 +113,6 @@ void USaveSubsystem::LoadGame(const ESaveType LoadEvent)
 		UE_LOG(LogTemp, Error, TEXT("Game Load Failed"));
 		return;
 	}
-	
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Item save info size: %d"), SaveData->ShipItems[EShipSection::Body].SectionItems.Num()));
 	
 	if (const FActorSetWrapper* Saveables = RegisteredSaveables.Find(LoadEvent))
 	{

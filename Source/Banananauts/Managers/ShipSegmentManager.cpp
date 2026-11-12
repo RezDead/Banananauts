@@ -40,25 +40,20 @@ void AShipSegmentManager::OnSaveGame_Implementation(USaveData* SaveGameObject, c
 void AShipSegmentManager::OnLoadGame_Implementation(USaveData* SaveGameObject, ESaveType LoadEvent)
 {
 	ISaveable::OnLoadGame_Implementation(SaveGameObject, LoadEvent);
-
-	GEngine->AddOnScreenDebugMessage(3, 10.0f, FColor::Green, TEXT("Loaded segment."));
-	
+		
 	if (LoadEvent != ESaveType::Flight) return;
 	if (!SaveGameObject->ShipItems.Contains(SegmentType)) return;
 
 	TArray<FItemSaveInfo> ItemSaveInfo = SaveGameObject->ShipItems[SegmentType].SectionItems;
-
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green, FString::Printf(TEXT("Item save info size: %d"), ItemSaveInfo.Num()));
 	
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	for (auto Item : ItemSaveInfo)
 	{
 		UClass* ItemClass = Item.ItemType.LoadSynchronous();
 		if (!ItemClass)
 		{
-			GEngine->AddOnScreenDebugMessage(1, 10.0f, FColor::Red, TEXT("Failed to load item class for spawning."));
 			UE_LOG(LogTemp, Warning, TEXT("Failed to load item class for spawning."));
 			continue;
 		}
@@ -70,16 +65,17 @@ void AShipSegmentManager::OnLoadGame_Implementation(USaveData* SaveGameObject, E
 		{
 			Execute_AttachItem(this, SpawnedItem);
 		}
-		GEngine->AddOnScreenDebugMessage(2, 10.0f, FColor::Green, TEXT("Loaded item."));
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to spawn item type: %s, on flight begin"), *ItemClass->GetName());
+		}
 	}
 }
 
 void AShipSegmentManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green, FString::Printf(TEXT("Segment %s started."), *GetName()));
-	
+		
 	ShipRef = GetParentActor();
 	
 	if (!ShipRef)
@@ -99,7 +95,7 @@ void AShipSegmentManager::BeginPlay()
 void AShipSegmentManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	
+		
 	Execute_UnregisterFromSaveSubsystem(this);
 }
 
@@ -154,7 +150,6 @@ void AShipSegmentManager::RegisterToSaveSubsystem_Implementation()
 	{
 		SaveSubsystem->RegisterSaveable(this, ESaveType::Flight);
 		SaveSubsystem->RegisterSaveable(this, ESaveType::Fail);
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green, FString::Printf(TEXT("Registered segment %s to save subsystem."), *GetName()));
 	}
 	else
 	{
