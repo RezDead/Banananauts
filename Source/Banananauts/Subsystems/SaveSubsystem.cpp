@@ -179,16 +179,19 @@ void USaveSubsystem::PreSaveUpdate(const ESaveType SaveEvent) const
 {
 	switch (SaveEvent) {
 	case ESaveType::Start:
+		SaveData->CurrentFuel = 0.0f;
 		SaveData->ShipItems.Empty();
 		SaveData->FailItems.Empty();
 		break;
 		
 	case ESaveType::Flight:
+		SaveData->CurrentFuel = 0.0f;
 		SaveData->ShipItems.Empty();
 		SaveData->FailItems.Empty();
 		break;
 		
 	case ESaveType::Fail:
+		SaveData->CurrentFuel = 0.0f;
 		SaveData->ShipItems.Empty();
 		SaveData->FailItems.Empty();
 		break;
