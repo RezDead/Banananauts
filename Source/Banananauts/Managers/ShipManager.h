@@ -25,7 +25,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnShipStatusChanged, EShipStatus, 
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
 class BANANANAUTS_API AShipManager : public AActor, public IAbilitySystemInterface, public IShipCommunication,
-                                     public IGameplayTagAssetInterface
+                                     public IGameplayTagAssetInterface, public ISaveable
 {
 	GENERATED_BODY()
 	
@@ -38,6 +38,7 @@ public:
 	
 	virtual void BeginLaunchSequence_Implementation() override;
 	virtual void BeginFlightSequence_Implementation() override;
+	virtual AActor* GetSection_Implementation(const EShipSection Section) override;
 	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	bool UseBananas(int Amount) const;
@@ -52,8 +53,17 @@ public:
 	virtual void TriggerEvent_Implementation(const EEventType Type, const EShipSection Category, const int Amount) override;
 	EShipStatus GetStatus() const { return Status; }
 	
+	/**
+	 * Saving/Loading
+	 */
+	virtual void OnSaveGame_Implementation(USaveData* SaveGameObject, ESaveType SaveEvent) override;
+	virtual void OnLoadGame_Implementation(USaveData* SaveGameObject, ESaveType LoadEvent) override;
+	virtual void RegisterToSaveSubsystem_Implementation() override;
+	virtual void UnregisterFromSaveSubsystem_Implementation() override;
+	
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 	/*
 	 * Blueprint Implemented Funcs

@@ -108,6 +108,14 @@ protected:
 	UFUNCTION(CallInEditor, Category = "Default")
 	void ShowEventRanges();
 	
+	/*
+	 * Debugging
+	 */
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
+	void ForceFail() {Failure();}
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
+	void ForceSuccess() {Success();}
+	
 private:
 	void InitRouteEvents();
 	void CheckIfRouteEventTriggered();

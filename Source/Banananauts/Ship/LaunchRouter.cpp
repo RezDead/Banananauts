@@ -23,7 +23,7 @@ void ALaunchRouter::Success()
 		
 	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
 	{
-		Subsystem->SaveGame();
+		Subsystem->UpdateAndCommitSave(ESaveType::Flight);
 	}
 		
 	if (ULevelManagerSubsystem* Subsystem = GetGameInstance()->GetSubsystem<ULevelManagerSubsystem>())

@@ -2,7 +2,6 @@
 
 
 #include "ShipManager.h"
-
 #include "Banananauts/GAS/Attributes/Items/ItemStability.h"
 #include "Banananauts/GAS/Effects/EModifyFuel.h"
 #include "Banananauts/GAS/Effects/EModifyHeat.h"
@@ -10,8 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Banananauts/Ship/RandomEventComponent.h"
 #include "Banananauts/Subsystems/LevelManagerSubsystem.h"
-#include "Engine/AssetManager.h"
-#include "Engine/StreamableManager.h"
+#include "Banananauts/Subsystems/SaveSubsystem.h"
 
 AShipManager::AShipManager()
 {
@@ -111,6 +109,28 @@ void AShipManager::BeginFlightSequence_Implementation()
 	
 	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
 	RandomEventComponent->BeginRandomEvents();
+}
+
+AActor* AShipManager::GetSection_Implementation(const EShipSection Section)
+{
+	IShipCommunication::GetSection_Implementation(Section);
+	
+	switch (Section) {
+	case EShipSection::Whole:
+		return this;
+		break;
+	case EShipSection::Nose:
+		return Nose;
+		break;
+	case EShipSection::Body:
+		return Body;
+		break;
+	case EShipSection::Tail:
+		return Tail;
+		break;
+	}
+
+	return nullptr;
 }
 
 /**
@@ -213,6 +233,42 @@ void AShipManager::TriggerEvent_Implementation(const EEventType Type, const EShi
 	UShipStatsUtility::TriggerEvent(Category, Segments, Amount);
 }
 
+void AShipManager::OnSaveGame_Implementation(USaveData* SaveGameObject, const ESaveType SaveEvent)
+{
+	ISaveable::OnSaveGame_Implementation(SaveGameObject, SaveEvent);
+	
+	if (SaveEvent != ESaveType::Flight) return;
+	
+	SaveGameObject->CurrentFuel = Attributes->GetFuel();
+}
+
+void AShipManager::OnLoadGame_Implementation(USaveData* SaveGameObject, const ESaveType LoadEvent)
+{
+	ISaveable::OnLoadGame_Implementation(SaveGameObject, LoadEvent);
+	
+	//Implemented in BP
+}
+
+void AShipManager::RegisterToSaveSubsystem_Implementation()
+{
+	ISaveable::RegisterToSaveSubsystem_Implementation();
+	
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->RegisterSaveable(this, ESaveType::Flight);
+	}
+}
+
+void AShipManager::UnregisterFromSaveSubsystem_Implementation()
+{
+	ISaveable::UnregisterFromSaveSubsystem_Implementation();
+	
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->UnregisterSaveable(this, ESaveType::Flight);
+	}
+}
+
 void AShipManager::HandleFlight(const float DeltaTime) const
 {
 	if (bIsFlying)
@@ -244,6 +300,8 @@ void AShipManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	Execute_RegisterToSaveSubsystem(this);
+	
 	InitSegments();
 	
 	if (AbilitySystemComponent)
@@ -256,6 +314,13 @@ void AShipManager::BeginPlay()
 	UpdateStatus();
 	
 	RandomEventComponent->SetShipManager(this);
+}
+
+void AShipManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	
+	Execute_UnregisterFromSaveSubsystem(this);
 }
 
 /**
@@ -403,7 +468,7 @@ void AShipManager::ConsumeFuel(const float& DeltaTime) const
 		return;
 	
 	//60 Converts minutes to seconds
-	const float ConsumedFuel = DeltaTime / (FuelBurnRate * 60);
+	const float ConsumedFuel = DeltaTime * FuelBurnRate / 60.0f;
 	
 	const FGameplayTag MagTag = FGameplayTag::RequestGameplayTag(FName("Data.Magnitude"));
 	if (!MagTag.IsValid())
