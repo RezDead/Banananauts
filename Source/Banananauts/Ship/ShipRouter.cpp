@@ -5,6 +5,7 @@
 #include "GameplayTagAssetInterface.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AShipRouter::AShipRouter()
@@ -105,6 +106,9 @@ void AShipRouter::ShowEventRanges()
 	}
 }
 
+/**
+ * Update the capsule location and rotation to match the ships' current location.
+ */
 void AShipRouter::UpdateCapsuleLocAndRot() const
 {
 	const FVector NewLocation = ShipRef->GetActorLocation();
@@ -128,6 +132,9 @@ void AShipRouter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* Othe
 	ObjectsInShip.RemoveSingleSwap(OtherActor);
 }
 
+/**
+ * Move all objects that are inside the ship relative to the old ship location.
+ */
 void AShipRouter::MoveObjectsWithShip(const FTransform& OldShipTransform) const
 {
 	const FGameplayTag TagToCheck = FGameplayTag::RequestGameplayTag(FName("Status.Attached"));
@@ -146,14 +153,29 @@ void AShipRouter::MoveObjectsWithShip(const FTransform& OldShipTransform) const
 			{
 				if (const ACharacter* Character = Cast<ACharacter>(Object))
 				{
-					if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
+					if (const UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
 					{
+						//Only handle when player is falling because on ground, movement component handles it
 						if (MoveComp->IsFalling())
 						{
 							Object->SetActorLocation(Delta.GetLocation(), false, nullptr, ETeleportType::ResetPhysics);
+							
+							//Adjust the camera control since that controls player rotation
+							if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+							{
+								const FRotator ControlRot = PC->GetControlRotation();
+								FQuat DeltaQuat = Delta.GetRotation();
+								const FRotator DeltaRot = DeltaQuat.Rotator();
+								FRotator FinalRot = ControlRot;
+								FinalRot.Yaw = DeltaRot.Yaw;
+								PC->SetControlRotation(FinalRot);
+							}
 						}
 					}
-				}	else
+				}
+				
+				//All objects other than player
+				else
 				{
 					Object->SetActorTransform(Delta, false, nullptr, ETeleportType::ResetPhysics);
 				}
