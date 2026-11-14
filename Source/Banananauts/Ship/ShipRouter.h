@@ -139,7 +139,7 @@ protected:
 					  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	
 	UFUNCTION()
-	void MoveObjectsWithShip(const FVector& OldShipLocation) const;
+	void MoveObjectsWithShip(const FTransform& OldShipTransform) const;
 	
 private:
 	void InitRouteEvents();

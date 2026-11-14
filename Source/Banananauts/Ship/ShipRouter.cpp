@@ -4,6 +4,7 @@
 #include "ShipRouter.h"
 #include "GameplayTagAssetInterface.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 AShipRouter::AShipRouter()
@@ -16,6 +17,7 @@ AShipRouter::AShipRouter()
 	InShipCollision = CreateDefaultSubobject<UCapsuleComponent>(TEXT("InShipCollision"));
 	InShipCollision->SetCapsuleHalfHeight(900.0f);
 	InShipCollision->SetCapsuleRadius(343.413116f);
+	InShipCollision->SetCollisionObjectType(ECC_Vehicle);
 	InShipCollision->SetCollisionResponseToAllChannels(ECR_Ignore);
 	InShipCollision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	InShipCollision->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
@@ -65,13 +67,13 @@ void AShipRouter::AddShipProgress(const float DeltaProgress)
 		return;
 	}
 	
-	const FVector ShipLocation = ShipRef->GetActorLocation();
+	const FTransform ShipTransform = ShipRef->GetActorTransform();
 	
 	//Update position
 	const FTransform NewTransform = GetTransformAtPercent(ShipProgress);
 	ShipRef->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
 	
-	MoveObjectsWithShip(ShipLocation);
+	MoveObjectsWithShip(ShipTransform);
 	UpdateCapsuleLocAndRot();
 }
 
@@ -126,36 +128,38 @@ void AShipRouter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* Othe
 	ObjectsInShip.RemoveSingleSwap(OtherActor);
 }
 
-void AShipRouter::MoveObjectsWithShip(const FVector& OldShipLocation) const
+void AShipRouter::MoveObjectsWithShip(const FTransform& OldShipTransform) const
 {
-	const FVector NewShipLocation = ShipRef->GetActorLocation();
-	const FVector Delta = NewShipLocation - OldShipLocation;
 	const FGameplayTag TagToCheck = FGameplayTag::RequestGameplayTag(FName("Status.Attached"));
 	const TArray<AActor*> StaticObjects = ObjectsInShip;
-
+	const FTransform NewTransform = ShipRef->GetActorTransform();
+	
 	for (AActor* Object : StaticObjects)
 	{
-		if (!IsValid(Object))
-		{
-			continue;
-		}
-
+		FTransform Delta = Object->GetActorTransform().GetRelativeTransform(OldShipTransform);
+		Delta = Delta * NewTransform;
+		FTransform Debug = Object->GetActorTransform().GetRelativeTransform(NewTransform);
+		
 		if (const IGameplayTagAssetInterface* TagInterface = Cast<IGameplayTagAssetInterface>(Object))
 		{
 			if (!TagInterface->HasMatchingGameplayTag(TagToCheck))
 			{
-				const FVector NewObjectLocation = Object->GetActorLocation() + Delta;
-
-				if (ACharacter* Character = Cast<ACharacter>(Object))
+				if (const ACharacter* Character = Cast<ACharacter>(Object))
 				{
-					Character->TeleportTo(NewObjectLocation, Character->GetActorRotation(), false, true);
-				}
-				else
+					if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
+					{
+						if (MoveComp->IsFalling())
+						{
+							Object->SetActorLocation(Delta.GetLocation(), false, nullptr, ETeleportType::ResetPhysics);
+						}
+					}
+				}	else
 				{
-					Object->AddActorWorldOffset(Delta, false, nullptr, ETeleportType::TeleportPhysics);
+					Object->SetActorTransform(Delta, false, nullptr, ETeleportType::ResetPhysics);
 				}
 			}
 		}
+
 	}
 }
 
