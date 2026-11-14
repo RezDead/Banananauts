@@ -40,28 +40,42 @@ void AShipSegmentManager::OnSaveGame_Implementation(USaveData* SaveGameObject, c
 void AShipSegmentManager::OnLoadGame_Implementation(USaveData* SaveGameObject, ESaveType LoadEvent)
 {
 	ISaveable::OnLoadGame_Implementation(SaveGameObject, LoadEvent);
-
+		
 	if (LoadEvent != ESaveType::Flight) return;
 	if (!SaveGameObject->ShipItems.Contains(SegmentType)) return;
 
 	TArray<FItemSaveInfo> ItemSaveInfo = SaveGameObject->ShipItems[SegmentType].SectionItems;
-
+	
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	for (auto Item : ItemSaveInfo)
 	{
+		UClass* ItemClass = Item.ItemType.LoadSynchronous();
+		if (!ItemClass)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to load item class for spawning."));
+			continue;
+		}
+		
 		const FTransform SpawnTransform = Item.RelativeTransform * GetActorTransform();
 
-		AActor* SpawnedItem = GetWorld()->SpawnActor(Item.ItemType.Get(), &SpawnTransform, SpawnParams);
-		Execute_AttachItem(this, SpawnedItem);
+		AActor* SpawnedItem = GetWorld()->SpawnActor(ItemClass, &SpawnTransform, SpawnParams);
+		if (SpawnedItem)
+		{
+			Execute_AttachItem(this, SpawnedItem);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to spawn item type: %s, on flight begin"), *ItemClass->GetName());
+		}
 	}
 }
 
 void AShipSegmentManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
+		
 	ShipRef = GetParentActor();
 	
 	if (!ShipRef)
@@ -81,7 +95,7 @@ void AShipSegmentManager::BeginPlay()
 void AShipSegmentManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	
+		
 	Execute_UnregisterFromSaveSubsystem(this);
 }
 

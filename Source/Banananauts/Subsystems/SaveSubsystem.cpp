@@ -113,7 +113,7 @@ void USaveSubsystem::LoadGame(const ESaveType LoadEvent)
 		UE_LOG(LogTemp, Error, TEXT("Game Load Failed"));
 		return;
 	}
-
+	
 	if (const FActorSetWrapper* Saveables = RegisteredSaveables.Find(LoadEvent))
 	{
 		for (const auto& Saveable : Saveables->Actors)

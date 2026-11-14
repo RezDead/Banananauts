@@ -15,12 +15,12 @@ struct FItemSaveInfo
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Item Type")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, SaveGame, Category = "Item Type")
 	TSoftClassPtr<AItemBase> ItemType;
 	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Item Data")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, SaveGame, Category = "Item Data")
 	EShipSection AttachedTo = EShipSection::Whole;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Item Data")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, SaveGame, Category = "Item Data")
 	FTransform RelativeTransform;
 	
 };
