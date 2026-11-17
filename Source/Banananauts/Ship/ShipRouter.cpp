@@ -2,6 +2,10 @@
 
 
 #include "ShipRouter.h"
+#include "GameplayTagAssetInterface.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AShipRouter::AShipRouter()
@@ -10,6 +14,16 @@ AShipRouter::AShipRouter()
 	
 	Spline = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
 	SetRootComponent(Spline);
+
+	InShipCollision = CreateDefaultSubobject<UCapsuleComponent>(TEXT("InShipCollision"));
+	InShipCollision->SetCapsuleHalfHeight(900.0f);
+	InShipCollision->SetCapsuleRadius(343.413116f);
+	InShipCollision->SetCollisionObjectType(ECC_Vehicle);
+	InShipCollision->SetCollisionResponseToAllChannels(ECR_Ignore);
+	InShipCollision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	InShipCollision->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
+	InShipCollision->SetRelativeLocation(FVector(0.0f, 0.0f, CapsuleZHeight));
+
 }
 
 /**
@@ -53,10 +67,15 @@ void AShipRouter::AddShipProgress(const float DeltaProgress)
 			
 		return;
 	}
-		
+	
+	const FTransform ShipTransform = ShipRef->GetActorTransform();
+	
 	//Update position
 	const FTransform NewTransform = GetTransformAtPercent(ShipProgress);
 	ShipRef->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
+	
+	MoveObjectsWithShip(ShipTransform);
+	UpdateCapsuleLocAndRot();
 }
 
 /**
@@ -84,6 +103,85 @@ void AShipRouter::ShowEventRanges()
 		DrawDebugSphere(GetWorld(), Min, 50, 4, Color, false, 10.0f, 0, 5);
 		DrawDebugSphere(GetWorld(), Max, 50, 4, Color, false, 10.0f, 0, 5);
 		DrawDebugLine(GetWorld(), Min, Max, Color, false, 10.0f, 0, 5);
+	}
+}
+
+/**
+ * Update the capsule location and rotation to match the ships' current location.
+ */
+void AShipRouter::UpdateCapsuleLocAndRot() const
+{
+	const FVector NewLocation = ShipRef->GetActorLocation();
+	const FQuat NewRotation = ShipRef->GetActorQuat();
+	FVector Offset = FVector(0.0f, 0.0f, CapsuleZHeight);
+	
+	Offset = NewRotation.RotateVector(Offset);
+	
+	InShipCollision->SetWorldLocationAndRotation(NewLocation + Offset, NewRotation);
+}
+
+void AShipRouter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	ObjectsInShip.Add(OtherActor);
+}
+
+void AShipRouter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex)
+{
+	ObjectsInShip.RemoveSingleSwap(OtherActor);
+}
+
+/**
+ * Move all objects that are inside the ship relative to the old ship location.
+ */
+void AShipRouter::MoveObjectsWithShip(const FTransform& OldShipTransform) const
+{
+	const FGameplayTag TagToCheck = FGameplayTag::RequestGameplayTag(FName("Status.Attached"));
+	const TArray<AActor*> StaticObjects = ObjectsInShip;
+	const FTransform NewTransform = ShipRef->GetActorTransform();
+	
+	for (AActor* Object : StaticObjects)
+	{
+		FTransform Delta = Object->GetActorTransform().GetRelativeTransform(OldShipTransform);
+		Delta = Delta * NewTransform;
+		FTransform Debug = Object->GetActorTransform().GetRelativeTransform(NewTransform);
+		
+		if (const IGameplayTagAssetInterface* TagInterface = Cast<IGameplayTagAssetInterface>(Object))
+		{
+			if (!TagInterface->HasMatchingGameplayTag(TagToCheck))
+			{
+				if (const ACharacter* Character = Cast<ACharacter>(Object))
+				{
+					if (const UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
+					{
+						//Only handle when player is falling because on ground, movement component handles it
+						if (MoveComp->IsFalling())
+						{
+							Object->SetActorLocation(Delta.GetLocation(), false, nullptr, ETeleportType::ResetPhysics);
+							
+							//Adjust the camera control since that controls player rotation
+							if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+							{
+								const FRotator ControlRot = PC->GetControlRotation();
+								FQuat DeltaQuat = Delta.GetRotation();
+								const FRotator DeltaRot = DeltaQuat.Rotator();
+								FRotator FinalRot = ControlRot;
+								FinalRot.Yaw = DeltaRot.Yaw;
+								PC->SetControlRotation(FinalRot);
+							}
+						}
+					}
+				}
+				
+				//All objects other than player
+				else
+				{
+					Object->SetActorTransform(Delta, false, nullptr, ETeleportType::ResetPhysics);
+				}
+			}
+		}
+
 	}
 }
 
@@ -148,6 +246,9 @@ void AShipRouter::BeginPlay()
 	InitRouteEvents();
 	
 	ShipRef = ShipEditorRef.Get();
+	
+	InShipCollision->OnComponentBeginOverlap.AddDynamic(this, &AShipRouter::OnOverlapBegin);
+	InShipCollision->OnComponentEndOverlap.AddDynamic(this, &AShipRouter::OnOverlapEnd);
 	
 	if (IsValid(ShipRef))
 	{
