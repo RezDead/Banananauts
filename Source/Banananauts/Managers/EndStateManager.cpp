@@ -14,11 +14,13 @@ void AEndStateManager::Success_Implementation()
 {
 }
 
-void AEndStateManager::CancelFailState_Implementation(EFailState State)
+void AEndStateManager::BeginFailState_Implementation(const EFailState State)
 {
+	ActiveFailStates.Add(State);
 }
 
-void AEndStateManager::BeginFailState_Implementation(EFailState State)
+void AEndStateManager::CancelFailState_Implementation(const EFailState State)
 {
+	ActiveFailStates.Remove(State);
 }
 

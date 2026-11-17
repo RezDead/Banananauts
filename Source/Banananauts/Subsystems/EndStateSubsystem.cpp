@@ -24,6 +24,10 @@ void UEndStateSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 	{
 		bManagerActive = true;
 	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("End State Subsystem is not active. Ensure fail manager is in world."));
+	}
 }
 
 /**
