@@ -54,6 +54,11 @@ AShipManager::AShipManager()
 	NoseSegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	BodySegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	TailSegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	
+	InnerShipCollision = CreateDefaultSubobject<UCapsuleComponent>(TEXT("InnerShipCollision"));
+	InnerShipCollision->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	OuterShipCollision = CreateDefaultSubobject<UCapsuleComponent>(TEXT("OuterShipCollision"));
+	OuterShipCollision->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 /**
@@ -136,6 +141,18 @@ AActor* AShipManager::GetSection_Implementation(const EShipSection Section)
 	}
 
 	return nullptr;
+}
+ 
+TArray<AActor*> AShipManager::GetActorsInShip_Implementation()
+{
+	return ObjectsInShip.Array();
+}
+
+TArray<AActor*> AShipManager::GetActorsAroundShip_Implementation()
+{
+	// Returns a TArray containing only Outer objects
+	return ObjectsAroundShip.Difference(ObjectsInShip).Array();
+
 }
 
 /**
@@ -316,6 +333,11 @@ void AShipManager::BeginPlay()
 	UpdateStatus();
 	
 	RandomEventComponent->SetShipManager(this);
+	
+	InnerShipCollision->OnComponentBeginOverlap.AddDynamic(this, &AShipManager::OnInnerOverlapBegin);
+	InnerShipCollision->OnComponentEndOverlap.AddDynamic(this, &AShipManager::OnInnerOverlapEnd);
+	OuterShipCollision->OnComponentBeginOverlap.AddDynamic(this, &AShipManager::OnOuterOverlapBegin);
+	OuterShipCollision->OnComponentEndOverlap.AddDynamic(this, &AShipManager::OnOuterOverlapEnd);
 }
 
 void AShipManager::EndPlay(const EEndPlayReason::Type EndPlayReason)

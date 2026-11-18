@@ -36,9 +36,23 @@ public:
 	{ OutContainer = GameplayTags; }
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UCapsuleComponent* InnerShipCollision;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UCapsuleComponent* OuterShipCollision;
+	UPROPERTY(BlueprintReadOnly)
+	TSet<AActor*> ObjectsInShip;
+	UPROPERTY(BlueprintReadOnly)
+	TSet<AActor*> ObjectsAroundShip;
+	UPROPERTY(BlueprintReadOnly)
+	TSet<AActor*> ObjectsInAndAroundShip;
+	
 	virtual void BeginLaunchSequence_Implementation() override;
 	virtual void BeginFlightSequence_Implementation() override;
 	virtual AActor* GetSection_Implementation(const EShipSection Section) override;
+	
+	virtual TArray<AActor*> GetActorsInShip_Implementation() override;
+	virtual TArray<AActor*> GetActorsAroundShip_Implementation() override;
 	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	bool UseBananas(int Amount) const;
@@ -64,6 +78,39 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	/**
+	 * Overlaps with in and around colliders.
+	 */
+	
+	UFUNCTION()
+	void OnInnerOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
+	                         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, 
+	                         bool bFromSweep, const FHitResult& SweepResult)
+	{
+		ObjectsInShip.Add(OtherActor);
+	}
+	UFUNCTION()
+	void OnInnerOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
+					  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+	{
+		ObjectsInShip.Remove(OtherActor);
+	}
+	UFUNCTION()
+	void OnOuterOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
+					UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, 
+					bool bFromSweep, const FHitResult& SweepResult)
+	{
+		ObjectsAroundShip.Add(OtherActor);
+	}
+	UFUNCTION()
+	void OnOuterOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
+					  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+	{
+		ObjectsAroundShip.Remove(OtherActor);
+	}
+	
+	
 	
 	/*
 	 * Blueprint Implemented Funcs

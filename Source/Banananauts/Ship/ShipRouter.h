@@ -67,9 +67,6 @@ public:
 	
 	virtual void Success();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UCapsuleComponent* InShipCollision;
-	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -107,24 +104,6 @@ protected:
 	 */
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void ForceSuccess() {Success();}
-	
-	/**
-	 * Move objects in the ship during flight
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|Capsule")
-	float CapsuleZHeight = 850.0f;
-	UPROPERTY()
-	TArray<AActor*> ObjectsInShip;
-	
-	UFUNCTION()
-	void UpdateCapsuleLocAndRot() const;
-	UFUNCTION()
-	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
-						UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, 
-						bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
-					  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	
 	UFUNCTION()
 	void MoveObjectsWithShip(const FTransform& OldShipTransform) const;
