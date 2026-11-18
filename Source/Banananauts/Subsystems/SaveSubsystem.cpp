@@ -48,7 +48,7 @@ void USaveSubsystem::UpdateToBeSavedData(const ESaveType SaveEvent)
 	
 	if (!Saveables) return;
 	
-	for (const auto& Saveable : Saveables->Actors)
+	for (const auto& Saveable : Saveables->Objects)
 	{
 		ISaveable::Execute_OnSaveGame(Saveable, SaveData, SaveEvent);
 	}
@@ -116,7 +116,7 @@ void USaveSubsystem::LoadGame(const ESaveType LoadEvent)
 	
 	if (const FActorSetWrapper* Saveables = RegisteredSaveables.Find(LoadEvent))
 	{
-		for (const auto& Saveable : Saveables->Actors)
+		for (const auto& Saveable : Saveables->Objects)
 		{
 			ISaveable::Execute_OnLoadGame(Saveable, SaveData, LoadEvent);
 		}
@@ -128,7 +128,7 @@ void USaveSubsystem::LoadGame(const ESaveType LoadEvent)
 /**
  * Registers a saveable object with the save subsystem.
  */
-void USaveSubsystem::RegisterSaveable(AActor* Saveable, const ESaveType SaveEvent)
+void USaveSubsystem::RegisterSaveable(UObject* Saveable, const ESaveType SaveEvent)
 {
 	if (!IsValid(Saveable))
 	{
@@ -138,12 +138,12 @@ void USaveSubsystem::RegisterSaveable(AActor* Saveable, const ESaveType SaveEven
 	
 	if (RegisteredSaveables.Contains(SaveEvent))
 	{
-		RegisteredSaveables[SaveEvent].Actors.Add(Saveable);
+		RegisteredSaveables[SaveEvent].Objects.Add(Saveable);
 	}
 	else
 	{
 		FActorSetWrapper NewSet;
-		NewSet.Actors.Add(Saveable);
+		NewSet.Objects.Add(Saveable);
 		RegisteredSaveables.Add(SaveEvent, NewSet);
 	}
 }
@@ -151,13 +151,13 @@ void USaveSubsystem::RegisterSaveable(AActor* Saveable, const ESaveType SaveEven
 /**
  * Unregisters a saveable object from the save subsystem.
  */
-void USaveSubsystem::UnregisterSaveable(AActor* Saveable, const ESaveType SaveEvent)
+void USaveSubsystem::UnregisterSaveable(UObject* Saveable, const ESaveType SaveEvent)
 {
 	if (!Saveable) return;
 	
 	if (RegisteredSaveables.Contains(SaveEvent))
 	{
-		RegisteredSaveables[SaveEvent].Actors.Remove(Saveable);
+		RegisteredSaveables[SaveEvent].Objects.Remove(Saveable);
 	}
 }
 
@@ -194,6 +194,8 @@ void USaveSubsystem::PreSaveUpdate(const ESaveType SaveEvent) const
 		SaveData->CurrentFuel = 0.0f;
 		SaveData->ShipItems.Empty();
 		SaveData->FailItems.Empty();
+		break;
+	case ESaveType::Success:
 		break;
 	}
 
