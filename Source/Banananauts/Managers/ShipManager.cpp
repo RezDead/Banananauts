@@ -302,6 +302,8 @@ void AShipManager::HandleFlight(const float DeltaTime) const
 		ShipRouter->AddShipProgress(DeltaProgress);
 		
 		ConsumeFuel(DeltaTime);
+		
+		CheckFallFailCondition();
 	}
 }
 
@@ -435,6 +437,26 @@ void AShipManager::CheckExplosionFailCondition()
 		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
 		{
 			Subsystem->CancelFailState(EFailState::Explosion);
+		}
+	}
+}
+
+void AShipManager::CheckFallFailCondition() const
+{
+	if (!bIsFlying) return;
+	
+	if (const APawn* Pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0); !ObjectsInShip.Contains(Pawn))
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->BeginFailState(EFailState::Fall);
+		}
+	}
+	else
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->CancelFailState(EFailState::Fall);
 		}
 	}
 }

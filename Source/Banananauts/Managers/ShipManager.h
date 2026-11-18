@@ -44,8 +44,6 @@ public:
 	TSet<AActor*> ObjectsInShip;
 	UPROPERTY(BlueprintReadOnly)
 	TSet<AActor*> ObjectsAroundShip;
-	UPROPERTY(BlueprintReadOnly)
-	TSet<AActor*> ObjectsInAndAroundShip;
 	
 	virtual void BeginLaunchSequence_Implementation() override;
 	virtual void BeginFlightSequence_Implementation() override;
@@ -201,6 +199,7 @@ protected:
 	
 	void CheckNoFuelFailCondition();
 	void CheckExplosionFailCondition();
+	void CheckFallFailCondition() const;
 	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	int GetBananaCount();
