@@ -262,6 +262,7 @@ void AShipManager::OnSaveGame_Implementation(USaveData* SaveGameObject, const ES
 	if (SaveEvent != ESaveType::Flight) return;
 	
 	SaveGameObject->CurrentFuel = Attributes->GetFuel();
+	SaveGameObject->IslandTime += GetWorld()->GetTimeSeconds() - StartTime;
 }
 
 void AShipManager::OnLoadGame_Implementation(USaveData* SaveGameObject, const ESaveType LoadEvent)
@@ -321,6 +322,7 @@ void AShipManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	StartTime = GetWorld()->GetTimeSeconds();
 	Execute_RegisterToSaveSubsystem(this);
 	
 	InitSegments();

@@ -182,6 +182,8 @@ void USaveSubsystem::PreSaveUpdate(const ESaveType SaveEvent) const
 		SaveData->CurrentFuel = 0.0f;
 		SaveData->ShipItems.Empty();
 		SaveData->FailItems.Empty();
+		SaveData->IslandTime = 0.0f;
+		SaveData->FlightTime = 0.0f;
 		break;
 		
 	case ESaveType::Flight:
