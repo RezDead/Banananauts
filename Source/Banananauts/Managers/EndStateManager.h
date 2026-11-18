@@ -25,7 +25,7 @@ public:
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE bool IsInFailState(const EFailState State) const {return ActiveFailStates.Contains(State);}
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite)
 	TSet<EFailState> ActiveFailStates;
 	
 };
