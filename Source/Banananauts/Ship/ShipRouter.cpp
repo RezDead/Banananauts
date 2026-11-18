@@ -3,6 +3,7 @@
 
 #include "ShipRouter.h"
 #include "GameplayTagAssetInterface.h"
+#include "Banananauts/Interfaces/ShipCommunication.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -14,15 +15,6 @@ AShipRouter::AShipRouter()
 	
 	Spline = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
 	SetRootComponent(Spline);
-
-	InShipCollision = CreateDefaultSubobject<UCapsuleComponent>(TEXT("InShipCollision"));
-	InShipCollision->SetCapsuleHalfHeight(900.0f);
-	InShipCollision->SetCapsuleRadius(343.413116f);
-	InShipCollision->SetCollisionObjectType(ECC_Vehicle);
-	InShipCollision->SetCollisionResponseToAllChannels(ECR_Ignore);
-	InShipCollision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	InShipCollision->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
-	InShipCollision->SetRelativeLocation(FVector(0.0f, 0.0f, CapsuleZHeight));
 
 }
 
@@ -75,7 +67,6 @@ void AShipRouter::AddShipProgress(const float DeltaProgress)
 	ShipRef->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
 	
 	MoveObjectsWithShip(ShipTransform);
-	UpdateCapsuleLocAndRot();
 }
 
 /**
@@ -107,45 +98,18 @@ void AShipRouter::ShowEventRanges()
 }
 
 /**
- * Update the capsule location and rotation to match the ships' current location.
- */
-void AShipRouter::UpdateCapsuleLocAndRot() const
-{
-	const FVector NewLocation = ShipRef->GetActorLocation();
-	const FQuat NewRotation = ShipRef->GetActorQuat();
-	FVector Offset = FVector(0.0f, 0.0f, CapsuleZHeight);
-	
-	Offset = NewRotation.RotateVector(Offset);
-	
-	InShipCollision->SetWorldLocationAndRotation(NewLocation + Offset, NewRotation);
-}
-
-void AShipRouter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	ObjectsInShip.Add(OtherActor);
-}
-
-void AShipRouter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex)
-{
-	ObjectsInShip.RemoveSingleSwap(OtherActor);
-}
-
-/**
  * Move all objects that are inside the ship relative to the old ship location.
  */
 void AShipRouter::MoveObjectsWithShip(const FTransform& OldShipTransform) const
 {
 	const FGameplayTag TagToCheck = FGameplayTag::RequestGameplayTag(FName("Status.Attached"));
-	const TArray<AActor*> StaticObjects = ObjectsInShip;
 	const FTransform NewTransform = ShipRef->GetActorTransform();
+	TArray<AActor*> StaticObjects = IShipCommunication::Execute_GetActorsInShip(ShipRef);
 	
 	for (AActor* Object : StaticObjects)
 	{
 		FTransform Delta = Object->GetActorTransform().GetRelativeTransform(OldShipTransform);
 		Delta = Delta * NewTransform;
-		FTransform Debug = Object->GetActorTransform().GetRelativeTransform(NewTransform);
 		
 		if (const IGameplayTagAssetInterface* TagInterface = Cast<IGameplayTagAssetInterface>(Object))
 		{
@@ -247,9 +211,6 @@ void AShipRouter::BeginPlay()
 	
 	ShipRef = ShipEditorRef.Get();
 	
-	InShipCollision->OnComponentBeginOverlap.AddDynamic(this, &AShipRouter::OnOverlapBegin);
-	InShipCollision->OnComponentEndOverlap.AddDynamic(this, &AShipRouter::OnOverlapEnd);
-	
 	if (IsValid(ShipRef))
 	{
 		BeginRoute();
@@ -266,15 +227,4 @@ void AShipRouter::BeginPlay()
  */
 void AShipRouter::Success()
 {
-	SuccessDelegate.Broadcast();
-}
-
-/**
- * --To be implemented in Children--
- *
- * What happens when the ship fails the route.
- */
-void AShipRouter::Failure()
-{
-	FailureDelegate.Broadcast();
 }
