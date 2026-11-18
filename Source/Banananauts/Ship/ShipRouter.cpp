@@ -145,7 +145,6 @@ void AShipRouter::MoveObjectsWithShip(const FTransform& OldShipTransform) const
 	{
 		FTransform Delta = Object->GetActorTransform().GetRelativeTransform(OldShipTransform);
 		Delta = Delta * NewTransform;
-		FTransform Debug = Object->GetActorTransform().GetRelativeTransform(NewTransform);
 		
 		if (const IGameplayTagAssetInterface* TagInterface = Cast<IGameplayTagAssetInterface>(Object))
 		{
@@ -266,15 +265,4 @@ void AShipRouter::BeginPlay()
  */
 void AShipRouter::Success()
 {
-	SuccessDelegate.Broadcast();
-}
-
-/**
- * --To be implemented in Children--
- *
- * What happens when the ship fails the route.
- */
-void AShipRouter::Failure()
-{
-	FailureDelegate.Broadcast();
 }

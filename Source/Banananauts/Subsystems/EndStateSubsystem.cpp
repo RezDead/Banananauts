@@ -36,20 +36,34 @@ void UEndStateSubsystem::OnWorldBeginPlay(UWorld& InWorld)
  */
 void UEndStateSubsystem::BeginFailState(const EFailState State) const
 {
-	if (!bManagerActive) return;
+	if (!bManagerActive)
+	{
+		UE_LOG(LogTemp, Error, TEXT("End State Subsystem is not active despite calling BeginFailState"));
+		return;
+	}
+	
+	if (EndStateManager->IsInFailState(State)) return;
 	
 	EndStateManager->BeginFailState(State);
+	UE_LOG(LogTemp, Log, TEXT("BeginFailState called with state: %s"), *UEnum::GetValueAsString(State));
 }
 
 /**
  * Calls cancel fail state in the end state manager actor
- * @param State 
+ * @param State Fail state to cancel
  */
 void UEndStateSubsystem::CancelFailState(const EFailState State) const
 {
-	if (!bManagerActive) return;
+	if (!bManagerActive)
+	{
+		UE_LOG(LogTemp, Error, TEXT("End State Subsystem is not active despite calling CancelFailState"));
+		return;
+	}
+	
+	if (!EndStateManager->IsInFailState(State)) return;
 	
 	EndStateManager->CancelFailState(State);
+	UE_LOG(LogTemp, Log, TEXT("CancelFailState called with state: %s"), *UEnum::GetValueAsString(State));
 }
 
 /**
@@ -57,7 +71,11 @@ void UEndStateSubsystem::CancelFailState(const EFailState State) const
  */
 void UEndStateSubsystem::TriggerSuccess() const
 {
-	if (!bManagerActive) return;
+	if (!bManagerActive)
+	{
+		UE_LOG(LogTemp, Error, TEXT("End State Subsystem is not active despite calling TriggerSuccess"));
+		return;
+	}
 	
 	EndStateManager->Success();
 }
@@ -69,7 +87,11 @@ void UEndStateSubsystem::TriggerSuccess() const
  */
 bool UEndStateSubsystem::CheckIsInFailState(const EFailState State) const
 {
-	if (!bManagerActive) return false;
+	if (!bManagerActive)
+	{
+		UE_LOG(LogTemp, Error, TEXT("End State Subsystem is not active despite calling CheckIsInFailState"));
+		return false;
+	}
 	
 	return EndStateManager->IsInFailState(State);
 }

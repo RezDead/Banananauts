@@ -8,6 +8,7 @@
 #include "Banananauts/Utilities/ShipStatsUtility.h"
 #include "Kismet/GameplayStatics.h"
 #include "Banananauts/Ship/RandomEventComponent.h"
+#include "Banananauts/Subsystems/EndStateSubsystem.h"
 #include "Banananauts/Subsystems/LevelManagerSubsystem.h"
 #include "Banananauts/Subsystems/SaveSubsystem.h"
 
@@ -86,9 +87,6 @@ void AShipManager::InitShipRouter()
 	{
 		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
 	}
-	
-	ShipRouter->SuccessDelegate.AddDynamic(this, &AShipManager::Success);
-	ShipRouter->FailureDelegate.AddDynamic(this, &AShipManager::Failure);
 }
 
 void AShipManager::Launch_Implementation()
@@ -109,6 +107,13 @@ void AShipManager::BeginFlightSequence_Implementation()
 	
 	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
 	RandomEventComponent->BeginRandomEvents();
+	
+	//Delay check by one tick to let systems process
+	GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		CheckExplosionFailCondition();
+	}));
+
 }
 
 AActor* AShipManager::GetSection_Implementation(const EShipSection Section)
@@ -280,9 +285,6 @@ void AShipManager::HandleFlight(const float DeltaTime) const
 		ShipRouter->AddShipProgress(DeltaProgress);
 		
 		ConsumeFuel(DeltaTime);
-		
-		/*if (Attributes->GetFuel() <= 0)
-			ShipRouter->Failure();*/
 	}
 }
 
@@ -366,16 +368,77 @@ void AShipManager::SetupAttributeListeners()
 void AShipManager::OnFuelChanged(const FOnAttributeChangeData& Data)
 {
 	UpdateStatus();
+	
+	//Delay by tick to let data update -- This implementation calls update status twice
+	GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		CheckNoFuelFailCondition();
+	}));
+
 }
 
 void AShipManager::OnHeatChanged(const FOnAttributeChangeData& Data)
 {
 	UpdateStatus();
+	
+	//Delay by tick to let data update -- This implementation calls update status twice
+	GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		CheckNoFuelFailCondition();
+	}));
 }
 
 void AShipManager::OnStabilityChanged(const FOnAttributeChangeData& Data)
 {
 	UpdateStatus();
+}
+
+/**
+ * Updates if the explosion fail condition is met.
+ */
+void AShipManager::CheckExplosionFailCondition()
+{
+	if (!bIsFlying) return;
+	
+	if (GetHeat() >= GetMaxHeat())
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->BeginFailState(EFailState::Explosion);
+			UpdateStatus();
+		}
+	}
+	else
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->CancelFailState(EFailState::Explosion);
+		}
+	}
+}
+
+/**
+ * Updates if the no fuel fail condition is met.
+ */
+void AShipManager::CheckNoFuelFailCondition() 
+{
+	if (!bIsFlying) return;
+	
+	if (Attributes->GetFuel() <= 0)
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->BeginFailState(EFailState::NoFuel);
+			UpdateStatus();
+		}
+	}
+	else 
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->CancelFailState(EFailState::NoFuel);
+		}
+	}
 }
 
 /**
@@ -489,32 +552,6 @@ void AShipManager::ConsumeFuel(const float& DeltaTime) const
 }
 
 /**
- * What happens when the ship succeeds. Currently not implemented.
- */
-void AShipManager::Success()
-{
-	if (bIsLaunching)
-	{
-		//Launch Complete
-		
-	} 
-	else if (bIsFlying)
-	{
-		//Game Win
-		
-	}
-}
-
-/**
- * What happens when the ship fails. Currently not implemented.
- */
-void AShipManager::Failure()
-{
-	UE_LOG(LogTemp, Display, TEXT("ShipManager::Failure - Game Lost"));
-	
-}
-
-/**
  * Defines the state transitions for the ship status. Registers transition functions for each valid state-to-state transition
  * in the TransitionRegistry. Each transition function is associated with a specific pair of starting and destination statuses.
  */
@@ -619,6 +656,15 @@ void AShipManager::UpdateStatus()
 	if (!CheckAttributeStatus())
 	{
 		bWarning = true;
+	}
+	
+	if (bIsFlying)
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>(); Subsystem->
+			CheckIsInFailState(EFailState::Explosion) || Subsystem->CheckIsInFailState(EFailState::NoFuel))
+		{
+			bFail = true;
+		}
 	}
 	
 	//Update status hierarchically

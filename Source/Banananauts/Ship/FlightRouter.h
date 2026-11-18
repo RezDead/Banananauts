@@ -21,7 +21,7 @@ struct FTurbulenceEvent
 /**
  * Handles the route and flight of the ship.
  *
- * Last Edited:10/19/2026
+ * Last Edited:11/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -33,7 +33,6 @@ public:
 	AFlightRouter();
 	
 	virtual void Success() override;
-	virtual void Failure() override;
 	
 protected:
 	

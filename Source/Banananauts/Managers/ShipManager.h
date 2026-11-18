@@ -20,7 +20,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnShipStatusChanged, EShipStatus, 
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 10/19/2026
+ * Last Edited: 11/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
@@ -152,6 +152,9 @@ protected:
 	void OnHeatChanged(const FOnAttributeChangeData& Data);
 	void OnStabilityChanged(const FOnAttributeChangeData& Data);
 	
+	void CheckNoFuelFailCondition();
+	void CheckExplosionFailCondition();
+	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	int GetBananaCount();
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
@@ -197,15 +200,6 @@ protected:
 	
 	void UpdateHeat() const;
 	void ConsumeFuel(const float& DeltaTime) const;
-	
-	/*
-	 * Win/Fail
-	 */
-	
-	UFUNCTION()
-	void Success();
-	UFUNCTION()
-	void Failure();
 	
 	/*
 	 * Status

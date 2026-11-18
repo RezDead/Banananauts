@@ -9,9 +9,6 @@
 #include "GameFramework/Actor.h"
 #include "ShipRouter.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSuccessDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFailureDelegate);
-
 UENUM(BlueprintType)
 enum class EFlightType : uint8
 {
@@ -51,7 +48,7 @@ struct FRouteEvent
 /**
  * Handles a ship route and events that occur along the way.
  *
- * Last Edited:10/19/2026
+ * Last Edited:11/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(Abstract)
@@ -67,15 +64,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void AddShipProgress(const float DeltaProgress);
-
-	//Delegates used to signal others that success/fail is coming
-	UPROPERTY(BlueprintAssignable)
-	FSuccessDelegate SuccessDelegate;
-	UPROPERTY(BlueprintAssignable)
-	FFailureDelegate FailureDelegate;
 	
 	virtual void Success();
-	virtual void Failure();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UCapsuleComponent* InShipCollision;
@@ -115,8 +105,6 @@ protected:
 	/*
 	 * Debugging
 	 */
-	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
-	void ForceFail() {Failure();}
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void ForceSuccess() {Success();}
 	
