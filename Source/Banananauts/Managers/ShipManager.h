@@ -300,4 +300,5 @@ protected:
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void SetStateFail() {SetStatus(EShipStatus::Fail);}
 	
+	float StartTime = 0.0f;
 };

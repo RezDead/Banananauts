@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "ShipRouter.h"
 #include "Banananauts/Enums/EventType.h"
+#include "Banananauts/Interfaces/Saveable.h"
 #include "FlightRouter.generated.h"
 
 USTRUCT(BlueprintType)
@@ -25,7 +26,7 @@ struct FTurbulenceEvent
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
-class BANANANAUTS_API AFlightRouter : public AShipRouter
+class BANANANAUTS_API AFlightRouter : public AShipRouter, public ISaveable
 {
 	GENERATED_BODY()
 
@@ -34,9 +35,14 @@ public:
 	
 	virtual void Success() override;
 	
+	virtual void OnSaveGame_Implementation(USaveData* SaveGameObject, ESaveType SaveEvent) override;
+	virtual void RegisterToSaveSubsystem_Implementation() override;
+	virtual void UnregisterFromSaveSubsystem_Implementation() override;
+	
 protected:
 	
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Default")
 	UDataTable* LevelsDT;
@@ -53,9 +59,9 @@ protected:
 	virtual void TriggerEvent(const FGameplayTag EventAction) override;
 	
 	virtual void BeginRoute() const override;
-	
-private:
-	TSoftObjectPtr<UWorld> GetRandomLevel() const;
 
+private:
 	void TriggerTurbulenceEvents(const TArray<FTurbulenceEvent>& Events) const;
+	
+	float StartTime = 0;
 };
