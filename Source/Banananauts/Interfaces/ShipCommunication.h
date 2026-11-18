@@ -36,4 +36,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	AActor* GetSection(const EShipSection Section);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	TArray<AActor*> GetActorsInShip();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	TArray<AActor*> GetActorsAroundShip();
 };

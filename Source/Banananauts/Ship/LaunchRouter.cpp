@@ -32,14 +32,6 @@ void ALaunchRouter::Success()
 	}
 }
 
-/**
- * What happens when the ship fails the route.
- */
-void ALaunchRouter::Failure()
-{
-	Super::Failure();
-}
-
 void ALaunchRouter::BeginPlay()
 {
 	Super::BeginPlay();

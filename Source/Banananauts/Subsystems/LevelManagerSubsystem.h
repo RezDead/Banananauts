@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "LevelManagerSubsystem.generated.h"
@@ -11,7 +10,7 @@
 /**
  * Manages level loading for the entire game.
  * 
- * Last Edited:10/17/2026
+ * Last Edited:11/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -20,7 +19,9 @@ class BANANANAUTS_API ULevelManagerSubsystem : public UGameInstanceSubsystem
 	GENERATED_BODY()
 	
 public:
+	UFUNCTION(BlueprintCallable)
 	void StartPreloadingLevel(TSoftObjectPtr<UWorld> Level);
+	UFUNCTION(BlueprintCallable)
 	void LoadLevel(TSoftObjectPtr<UWorld> Level);
 
 protected:

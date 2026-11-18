@@ -16,7 +16,6 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHeatStatusChanged, EBurnStatus, NewStatus);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBananasEmpty, bool, Empty);
 
-
 USTRUCT(Blueprintable)
 struct FEffectArrayWrapper
 {
@@ -25,11 +24,12 @@ struct FEffectArrayWrapper
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	TArray<FActiveGameplayEffectHandle> EffectArray;
 };
+
 /**
  * Holds the attributes and ASC that handles the state of the ship segments.
  * All data handling is handled by the attribute class.
  * 
- * Last Edited: 9/28/2026
+ * Last Edited: 11/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default")

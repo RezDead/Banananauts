@@ -41,4 +41,9 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, SaveGame)
 	TMap<TSoftClassPtr<AItemBase>, int> FailItems;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, SaveGame)
+	float IslandTime;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, SaveGame)
+	float FlightTime;
 };

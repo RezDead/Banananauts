@@ -20,7 +20,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnShipStatusChanged, EShipStatus, 
 /**
  * Manages the ship's segments and systems. Also provides access points to vital ship stats and functions.
  * 
- * Last Edited: 10/19/2026
+ * Last Edited: 11/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default Default|Stats Default|Segments")
@@ -36,9 +36,21 @@ public:
 	{ OutContainer = GameplayTags; }
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UCapsuleComponent* InnerShipCollision;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UCapsuleComponent* OuterShipCollision;
+	UPROPERTY(BlueprintReadOnly)
+	TSet<AActor*> ObjectsInShip;
+	UPROPERTY(BlueprintReadOnly)
+	TSet<AActor*> ObjectsAroundShip;
+	
 	virtual void BeginLaunchSequence_Implementation() override;
 	virtual void BeginFlightSequence_Implementation() override;
 	virtual AActor* GetSection_Implementation(const EShipSection Section) override;
+	
+	virtual TArray<AActor*> GetActorsInShip_Implementation() override;
+	virtual TArray<AActor*> GetActorsAroundShip_Implementation() override;
 	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	bool UseBananas(int Amount) const;
@@ -64,6 +76,39 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	/**
+	 * Overlaps with in and around colliders.
+	 */
+	
+	UFUNCTION()
+	void OnInnerOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
+	                         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, 
+	                         bool bFromSweep, const FHitResult& SweepResult)
+	{
+		ObjectsInShip.Add(OtherActor);
+	}
+	UFUNCTION()
+	void OnInnerOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
+					  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+	{
+		ObjectsInShip.Remove(OtherActor);
+	}
+	UFUNCTION()
+	void OnOuterOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
+					UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, 
+					bool bFromSweep, const FHitResult& SweepResult)
+	{
+		ObjectsAroundShip.Add(OtherActor);
+	}
+	UFUNCTION()
+	void OnOuterOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
+					  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+	{
+		ObjectsAroundShip.Remove(OtherActor);
+	}
+	
+	
 	
 	/*
 	 * Blueprint Implemented Funcs
@@ -152,6 +197,10 @@ protected:
 	void OnHeatChanged(const FOnAttributeChangeData& Data);
 	void OnStabilityChanged(const FOnAttributeChangeData& Data);
 	
+	void CheckNoFuelFailCondition();
+	void CheckExplosionFailCondition();
+	void CheckFallFailCondition() const;
+	
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
 	int GetBananaCount();
 	UFUNCTION(BlueprintCallable, Category = "Bananas")
@@ -197,15 +246,6 @@ protected:
 	
 	void UpdateHeat() const;
 	void ConsumeFuel(const float& DeltaTime) const;
-	
-	/*
-	 * Win/Fail
-	 */
-	
-	UFUNCTION()
-	void Success();
-	UFUNCTION()
-	void Failure();
 	
 	/*
 	 * Status
@@ -260,4 +300,5 @@ protected:
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void SetStateFail() {SetStatus(EShipStatus::Fail);}
 	
+	float StartTime = 0.0f;
 };

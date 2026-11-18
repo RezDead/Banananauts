@@ -9,9 +9,6 @@
 #include "GameFramework/Actor.h"
 #include "ShipRouter.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSuccessDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFailureDelegate);
-
 UENUM(BlueprintType)
 enum class EFlightType : uint8
 {
@@ -51,7 +48,7 @@ struct FRouteEvent
 /**
  * Handles a ship route and events that occur along the way.
  *
- * Last Edited:10/19/2026
+ * Last Edited:11/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(Abstract)
@@ -67,18 +64,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void AddShipProgress(const float DeltaProgress);
-
-	//Delegates used to signal others that success/fail is coming
-	UPROPERTY(BlueprintAssignable)
-	FSuccessDelegate SuccessDelegate;
-	UPROPERTY(BlueprintAssignable)
-	FFailureDelegate FailureDelegate;
 	
 	virtual void Success();
-	virtual void Failure();
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UCapsuleComponent* InShipCollision;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -116,27 +103,7 @@ protected:
 	 * Debugging
 	 */
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
-	void ForceFail() {Failure();}
-	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Testing")
 	void ForceSuccess() {Success();}
-	
-	/**
-	 * Move objects in the ship during flight
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Default|Capsule")
-	float CapsuleZHeight = 850.0f;
-	UPROPERTY()
-	TArray<AActor*> ObjectsInShip;
-	
-	UFUNCTION()
-	void UpdateCapsuleLocAndRot() const;
-	UFUNCTION()
-	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
-						UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, 
-						bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, 
-					  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	
 	UFUNCTION()
 	void MoveObjectsWithShip(const FTransform& OldShipTransform) const;
