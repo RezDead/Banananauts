@@ -9,4 +9,5 @@ enum class ESaveType : uint8
 	Start	UMETA(DisplayName = "Start"),
 	Flight	UMETA(DisplayName = "Flight"),
 	Fail	UMETA(DisplayName = "Fail"),
+	Success	UMETA(DisplayName = "Success"),
 };

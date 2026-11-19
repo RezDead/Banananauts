@@ -13,7 +13,7 @@ struct FActorSetWrapper
 	GENERATED_BODY()
 	
 	UPROPERTY()
-	TSet<AActor*> Actors;
+	TSet<UObject*> Objects;
 };
 
 /**
@@ -45,10 +45,10 @@ public:
 	void LoadGame(ESaveType LoadEvent);
 	
 	UFUNCTION(BlueprintCallable)
-	void RegisterSaveable(AActor* Saveable, ESaveType SaveEvent);
+	void RegisterSaveable(UObject* Saveable, ESaveType SaveEvent);
 	
 	UFUNCTION(BlueprintCallable)
-	void UnregisterSaveable(AActor* Saveable, ESaveType SaveEvent);
+	void UnregisterSaveable(UObject* Saveable, ESaveType SaveEvent);
 	
 	UFUNCTION(BlueprintCallable)
 	void ClearSaveData();

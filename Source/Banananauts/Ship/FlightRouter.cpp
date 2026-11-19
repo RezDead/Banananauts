@@ -5,6 +5,7 @@
 
 #include "Banananauts/Data/Tables/TRB_Levels.h"
 #include "Banananauts/Interfaces/ShipCommunication.h"
+#include "Banananauts/Subsystems/EndStateSubsystem.h"
 #include "Banananauts/Subsystems/LevelManagerSubsystem.h"
 #include "Banananauts/Subsystems/SaveSubsystem.h"
 
@@ -21,32 +22,30 @@ void AFlightRouter::Success()
 {
 	Super::Success();
 	
-	//Game Won
-}
-
-/**
- * What happens when the ship fails the route.
- */
-void AFlightRouter::Failure()
-{
-	Super::Failure();
-	
 	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
 	{
-		Subsystem->UpdateAndCommitSave(ESaveType::Fail);
+		Subsystem->UpdateAndCommitSave(ESaveType::Success);
 	}
 	
-	const TSoftObjectPtr<UWorld> LevelToLoad = GetRandomLevel();
-	
-	if (ULevelManagerSubsystem* Subsystem = GetGameInstance()->GetSubsystem<ULevelManagerSubsystem>())
+	if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
 	{
-		Subsystem->LoadLevel(LevelToLoad);
+		Subsystem->TriggerSuccess();
 	}
 }
 
 void AFlightRouter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	Execute_RegisterToSaveSubsystem(this);
+	StartTime = GetWorld()->GetTimeSeconds();
+}
+
+void AFlightRouter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	Execute_UnregisterFromSaveSubsystem(this);
 }
 
 /**
@@ -60,17 +59,32 @@ void AFlightRouter::BeginRoute() const
 	}
 }
 
-TSoftObjectPtr<UWorld> AFlightRouter::GetRandomLevel() const
+void AFlightRouter::OnSaveGame_Implementation(USaveData* SaveGameObject, ESaveType SaveEvent)
 {
-	if (!LevelsDT) {return nullptr;}
-	TArray<FName> RowNames = LevelsDT->GetRowNames();
+	ISaveable::OnSaveGame_Implementation(SaveGameObject, SaveEvent);
+	if (SaveEvent != ESaveType::Fail && SaveEvent != ESaveType::Success) return;
 	
-	if (RowNames.Num() == 0) {return nullptr;}
-	static const FString Context = TEXT("Fetching random level");
-	
-	TSoftObjectPtr<UWorld> Level = LevelsDT->FindRow<FTRB_Levels>(RowNames[FMath::RandRange(0, RowNames.Num() - 1)], Context)->Level;
-	
-	return Level;
+	SaveGameObject->FlightTime += GetWorld()->GetTimeSeconds() - StartTime;
+}
+
+void AFlightRouter::RegisterToSaveSubsystem_Implementation()
+{
+	ISaveable::RegisterToSaveSubsystem_Implementation();
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->RegisterSaveable(this, ESaveType::Success);
+		Subsystem->RegisterSaveable(this, ESaveType::Fail);
+	}
+}
+
+void AFlightRouter::UnregisterFromSaveSubsystem_Implementation()
+{
+	ISaveable::UnregisterFromSaveSubsystem_Implementation();
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->UnregisterSaveable(this, ESaveType::Success);
+		Subsystem->UnregisterSaveable(this, ESaveType::Fail);
+	}
 }
 
 void AFlightRouter::TriggerEvent(const FGameplayTag EventAction)

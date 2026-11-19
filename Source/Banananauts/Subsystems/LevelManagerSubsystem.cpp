@@ -2,7 +2,7 @@
 
 
 #include "LevelManagerSubsystem.h"
-
+#include "Engine/AssetManager.h"
 #include "Kismet/GameplayStatics.h"
 
 void ULevelManagerSubsystem::StartPreloadingLevel(TSoftObjectPtr<UWorld> Level)
