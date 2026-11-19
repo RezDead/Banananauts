@@ -6,6 +6,7 @@
 #include "AbilitySystemInterface.h"
 #include "Banananauts/Data/Save/SaveData.h"
 #include "Banananauts/Enums/BurnStatus.h"
+#include "Banananauts/Enums/ShipSection.h"
 #include "Banananauts/GAS/Attributes/ShipSegmentAttributes.h"
 #include "Banananauts/Interfaces/AttachableSegment.h"
 #include "Banananauts/Interfaces/Saveable.h"
@@ -15,7 +16,6 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHeatStatusChanged, EBurnStatus, NewStatus);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBananasEmpty, bool, Empty);
 
-
 USTRUCT(Blueprintable)
 struct FEffectArrayWrapper
 {
@@ -24,11 +24,12 @@ struct FEffectArrayWrapper
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Default", meta = (AllowPrivateAccess = "true"))
 	TArray<FActiveGameplayEffectHandle> EffectArray;
 };
+
 /**
  * Holds the attributes and ASC that handles the state of the ship segments.
  * All data handling is handled by the attribute class.
  * 
- * Last Edited: 9/28/2026
+ * Last Edited: 11/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS(PrioritizeCategories="Default")
@@ -58,13 +59,17 @@ public:
 	/**
 	 * Saving/Loading
 	 */
-	virtual void OnSaveGame_Implementation(USaveData* SaveGameObject) override;
-	virtual void OnLoadGame_Implementation(USaveData* SaveGameObject) override;
-	virtual void InitSaveSubsystem_Implementation() override;
+	virtual void OnSaveGame_Implementation(USaveData* SaveGameObject, ESaveType SaveEvent) override;
+	virtual void OnLoadGame_Implementation(USaveData* SaveGameObject, ESaveType LoadEvent) override;
+	virtual void RegisterToSaveSubsystem_Implementation() override;
+	virtual void UnregisterFromSaveSubsystem_Implementation() override;
 	
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
+	void OnFlightSaveEvent(USaveData* SaveGameObject) const;
+	void OnFailSaveEvent(USaveData* SaveGameObject) const;
 
 private:
 	void InitAttributes() const;

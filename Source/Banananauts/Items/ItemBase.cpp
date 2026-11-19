@@ -43,6 +43,8 @@ void AItemBase::OnConstruction(const FTransform& Transform)
 		GameplayTags = ItemRow->Tags;
 		ItemMesh->SetStaticMesh(ItemRow->Mesh);
 	}
+	
+	PostCPPConstruction();
 }
 
 // Called when the game starts or when spawned

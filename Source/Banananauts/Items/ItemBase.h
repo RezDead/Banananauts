@@ -41,6 +41,8 @@ public:
 	FName DisplayName;
 
 	virtual void OnConstruction(const FTransform& Transform) override;
+	UFUNCTION(BlueprintImplementableEvent, Category = "Construction")
+	void PostCPPConstruction();
 
 	virtual void Tick(float DeltaTime) override;
 

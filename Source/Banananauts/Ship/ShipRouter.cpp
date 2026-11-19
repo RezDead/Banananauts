@@ -2,6 +2,11 @@
 
 
 #include "ShipRouter.h"
+#include "GameplayTagAssetInterface.h"
+#include "Banananauts/Interfaces/ShipCommunication.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AShipRouter::AShipRouter()
@@ -10,6 +15,7 @@ AShipRouter::AShipRouter()
 	
 	Spline = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
 	SetRootComponent(Spline);
+
 }
 
 /**
@@ -53,10 +59,14 @@ void AShipRouter::AddShipProgress(const float DeltaProgress)
 			
 		return;
 	}
-		
+	
+	const FTransform ShipTransform = ShipRef->GetActorTransform();
+	
 	//Update position
 	const FTransform NewTransform = GetTransformAtPercent(ShipProgress);
 	ShipRef->SetActorLocationAndRotation(NewTransform.GetLocation(), NewTransform.GetRotation());
+	
+	MoveObjectsWithShip(ShipTransform);
 }
 
 /**
@@ -84,6 +94,58 @@ void AShipRouter::ShowEventRanges()
 		DrawDebugSphere(GetWorld(), Min, 50, 4, Color, false, 10.0f, 0, 5);
 		DrawDebugSphere(GetWorld(), Max, 50, 4, Color, false, 10.0f, 0, 5);
 		DrawDebugLine(GetWorld(), Min, Max, Color, false, 10.0f, 0, 5);
+	}
+}
+
+/**
+ * Move all objects that are inside the ship relative to the old ship location.
+ */
+void AShipRouter::MoveObjectsWithShip(const FTransform& OldShipTransform) const
+{
+	const FGameplayTag TagToCheck = FGameplayTag::RequestGameplayTag(FName("Status.Attached"));
+	const FTransform NewTransform = ShipRef->GetActorTransform();
+	TArray<AActor*> StaticObjects = IShipCommunication::Execute_GetActorsInShip(ShipRef);
+	
+	for (AActor* Object : StaticObjects)
+	{
+		FTransform Delta = Object->GetActorTransform().GetRelativeTransform(OldShipTransform);
+		Delta = Delta * NewTransform;
+		
+		if (const IGameplayTagAssetInterface* TagInterface = Cast<IGameplayTagAssetInterface>(Object))
+		{
+			if (!TagInterface->HasMatchingGameplayTag(TagToCheck))
+			{
+				if (const ACharacter* Character = Cast<ACharacter>(Object))
+				{
+					if (const UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
+					{
+						//Only handle when player is falling because on ground, movement component handles it
+						if (MoveComp->IsFalling())
+						{
+							Object->SetActorLocation(Delta.GetLocation(), false, nullptr, ETeleportType::ResetPhysics);
+							
+							//Adjust the camera control since that controls player rotation
+							if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+							{
+								const FRotator ControlRot = PC->GetControlRotation();
+								FQuat DeltaQuat = Delta.GetRotation();
+								const FRotator DeltaRot = DeltaQuat.Rotator();
+								FRotator FinalRot = ControlRot;
+								FinalRot.Yaw = DeltaRot.Yaw;
+								PC->SetControlRotation(FinalRot);
+							}
+						}
+					}
+				}
+				
+				//All objects other than player
+				else
+				{
+					Object->SetActorTransform(Delta, false, nullptr, ETeleportType::ResetPhysics);
+				}
+			}
+		}
+
 	}
 }
 
@@ -165,15 +227,4 @@ void AShipRouter::BeginPlay()
  */
 void AShipRouter::Success()
 {
-	SuccessDelegate.Broadcast();
-}
-
-/**
- * --To be implemented in Children--
- *
- * What happens when the ship fails the route.
- */
-void AShipRouter::Failure()
-{
-	FailureDelegate.Broadcast();
 }

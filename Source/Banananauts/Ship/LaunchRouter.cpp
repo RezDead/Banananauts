@@ -23,21 +23,13 @@ void ALaunchRouter::Success()
 		
 	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
 	{
-		Subsystem->SaveGame();
+		Subsystem->UpdateAndCommitSave(ESaveType::Flight);
 	}
 		
 	if (ULevelManagerSubsystem* Subsystem = GetGameInstance()->GetSubsystem<ULevelManagerSubsystem>())
 	{
 		Subsystem->LoadLevel(FlightLevel);
 	}
-}
-
-/**
- * What happens when the ship fails the route.
- */
-void ALaunchRouter::Failure()
-{
-	Super::Failure();
 }
 
 void ALaunchRouter::BeginPlay()

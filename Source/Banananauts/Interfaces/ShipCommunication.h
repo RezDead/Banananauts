@@ -33,4 +33,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void TriggerEvent(const EEventType Type, const EShipSection Category, const int Amount);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	AActor* GetSection(const EShipSection Section);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	TArray<AActor*> GetActorsInShip();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	TArray<AActor*> GetActorsAroundShip();
 };

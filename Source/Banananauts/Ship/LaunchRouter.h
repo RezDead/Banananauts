@@ -9,7 +9,7 @@
 /**
  * Handles the route and launch of the ship.
  *
- * Last Edited:10/18/2026
+ * Last Edited:11/17/2026
  * Author: Julian Kroeger-Miller
  */
 UCLASS()
@@ -21,8 +21,7 @@ public:
 	ALaunchRouter();
 	
 	virtual void Success() override;
-	virtual void Failure() override;
-
+	
 protected:
 	virtual void BeginPlay() override;
 	

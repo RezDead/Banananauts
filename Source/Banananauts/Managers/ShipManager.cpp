@@ -2,16 +2,15 @@
 
 
 #include "ShipManager.h"
-
 #include "Banananauts/GAS/Attributes/Items/ItemStability.h"
 #include "Banananauts/GAS/Effects/EModifyFuel.h"
 #include "Banananauts/GAS/Effects/EModifyHeat.h"
 #include "Banananauts/Utilities/ShipStatsUtility.h"
 #include "Kismet/GameplayStatics.h"
 #include "Banananauts/Ship/RandomEventComponent.h"
+#include "Banananauts/Subsystems/EndStateSubsystem.h"
 #include "Banananauts/Subsystems/LevelManagerSubsystem.h"
-#include "Engine/AssetManager.h"
-#include "Engine/StreamableManager.h"
+#include "Banananauts/Subsystems/SaveSubsystem.h"
 
 AShipManager::AShipManager()
 {
@@ -55,6 +54,11 @@ AShipManager::AShipManager()
 	NoseSegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	BodySegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	TailSegmentComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	
+	InnerShipCollision = CreateDefaultSubobject<UCapsuleComponent>(TEXT("InnerShipCollision"));
+	InnerShipCollision->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	OuterShipCollision = CreateDefaultSubobject<UCapsuleComponent>(TEXT("OuterShipCollision"));
+	OuterShipCollision->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 /**
@@ -88,9 +92,6 @@ void AShipManager::InitShipRouter()
 	{
 		UE_LOG(LogTemp, Fatal, TEXT("ShipManager: Failed to find ship router. Make sure it is spawned in world."));
 	}
-	
-	ShipRouter->SuccessDelegate.AddDynamic(this, &AShipManager::Success);
-	ShipRouter->FailureDelegate.AddDynamic(this, &AShipManager::Failure);
 }
 
 void AShipManager::Launch_Implementation()
@@ -111,6 +112,47 @@ void AShipManager::BeginFlightSequence_Implementation()
 	
 	GetWorld()->GetTimerManager().SetTimer(TickHandle, this, &AShipManager::TickSystems, SystemTickRate, true);
 	RandomEventComponent->BeginRandomEvents();
+	
+	//Delay check by one tick to let systems process
+	GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		CheckExplosionFailCondition();
+	}));
+
+}
+
+AActor* AShipManager::GetSection_Implementation(const EShipSection Section)
+{
+	IShipCommunication::GetSection_Implementation(Section);
+	
+	switch (Section) {
+	case EShipSection::Whole:
+		return this;
+		break;
+	case EShipSection::Nose:
+		return Nose;
+		break;
+	case EShipSection::Body:
+		return Body;
+		break;
+	case EShipSection::Tail:
+		return Tail;
+		break;
+	}
+
+	return nullptr;
+}
+ 
+TArray<AActor*> AShipManager::GetActorsInShip_Implementation()
+{
+	return ObjectsInShip.Array();
+}
+
+TArray<AActor*> AShipManager::GetActorsAroundShip_Implementation()
+{
+	// Returns a TArray containing only Outer objects
+	return ObjectsAroundShip.Difference(ObjectsInShip).Array();
+
 }
 
 /**
@@ -213,6 +255,43 @@ void AShipManager::TriggerEvent_Implementation(const EEventType Type, const EShi
 	UShipStatsUtility::TriggerEvent(Category, Segments, Amount);
 }
 
+void AShipManager::OnSaveGame_Implementation(USaveData* SaveGameObject, const ESaveType SaveEvent)
+{
+	ISaveable::OnSaveGame_Implementation(SaveGameObject, SaveEvent);
+	
+	if (SaveEvent != ESaveType::Flight) return;
+	
+	SaveGameObject->CurrentFuel = Attributes->GetFuel();
+	SaveGameObject->IslandTime += GetWorld()->GetTimeSeconds() - StartTime;
+}
+
+void AShipManager::OnLoadGame_Implementation(USaveData* SaveGameObject, const ESaveType LoadEvent)
+{
+	ISaveable::OnLoadGame_Implementation(SaveGameObject, LoadEvent);
+	
+	//Implemented in BP
+}
+
+void AShipManager::RegisterToSaveSubsystem_Implementation()
+{
+	ISaveable::RegisterToSaveSubsystem_Implementation();
+	
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->RegisterSaveable(this, ESaveType::Flight);
+	}
+}
+
+void AShipManager::UnregisterFromSaveSubsystem_Implementation()
+{
+	ISaveable::UnregisterFromSaveSubsystem_Implementation();
+	
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->UnregisterSaveable(this, ESaveType::Flight);
+	}
+}
+
 void AShipManager::HandleFlight(const float DeltaTime) const
 {
 	if (bIsFlying)
@@ -225,8 +304,7 @@ void AShipManager::HandleFlight(const float DeltaTime) const
 		
 		ConsumeFuel(DeltaTime);
 		
-		/*if (Attributes->GetFuel() <= 0)
-			ShipRouter->Failure();*/
+		CheckFallFailCondition();
 	}
 }
 
@@ -244,6 +322,9 @@ void AShipManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	StartTime = GetWorld()->GetTimeSeconds();
+	Execute_RegisterToSaveSubsystem(this);
+	
 	InitSegments();
 	
 	if (AbilitySystemComponent)
@@ -256,6 +337,18 @@ void AShipManager::BeginPlay()
 	UpdateStatus();
 	
 	RandomEventComponent->SetShipManager(this);
+	
+	InnerShipCollision->OnComponentBeginOverlap.AddDynamic(this, &AShipManager::OnInnerOverlapBegin);
+	InnerShipCollision->OnComponentEndOverlap.AddDynamic(this, &AShipManager::OnInnerOverlapEnd);
+	OuterShipCollision->OnComponentBeginOverlap.AddDynamic(this, &AShipManager::OnOuterOverlapBegin);
+	OuterShipCollision->OnComponentEndOverlap.AddDynamic(this, &AShipManager::OnOuterOverlapEnd);
+}
+
+void AShipManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	
+	Execute_UnregisterFromSaveSubsystem(this);
 }
 
 /**
@@ -301,16 +394,97 @@ void AShipManager::SetupAttributeListeners()
 void AShipManager::OnFuelChanged(const FOnAttributeChangeData& Data)
 {
 	UpdateStatus();
+	
+	//Delay by tick to let data update -- This implementation calls update status twice
+	GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		CheckNoFuelFailCondition();
+	}));
+
 }
 
 void AShipManager::OnHeatChanged(const FOnAttributeChangeData& Data)
 {
 	UpdateStatus();
+	
+	//Delay by tick to let data update -- This implementation calls update status twice
+	GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		CheckNoFuelFailCondition();
+	}));
 }
 
 void AShipManager::OnStabilityChanged(const FOnAttributeChangeData& Data)
 {
 	UpdateStatus();
+}
+
+/**
+ * Updates if the explosion fail condition is met.
+ */
+void AShipManager::CheckExplosionFailCondition()
+{
+	if (!bIsFlying) return;
+	
+	if (GetHeat() >= GetMaxHeat())
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->BeginFailState(EFailState::Explosion);
+			UpdateStatus();
+		}
+	}
+	else
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->CancelFailState(EFailState::Explosion);
+		}
+	}
+}
+
+void AShipManager::CheckFallFailCondition() const
+{
+	if (!bIsFlying) return;
+	
+	if (const APawn* Pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0); !ObjectsInShip.Contains(Pawn))
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->BeginFailState(EFailState::Fall);
+		}
+	}
+	else
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->CancelFailState(EFailState::Fall);
+		}
+	}
+}
+
+/**
+ * Updates if the no fuel fail condition is met.
+ */
+void AShipManager::CheckNoFuelFailCondition() 
+{
+	if (!bIsFlying) return;
+	
+	if (Attributes->GetFuel() <= 0)
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->BeginFailState(EFailState::NoFuel);
+			UpdateStatus();
+		}
+	}
+	else 
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>())
+		{
+			Subsystem->CancelFailState(EFailState::NoFuel);
+		}
+	}
 }
 
 /**
@@ -403,7 +577,7 @@ void AShipManager::ConsumeFuel(const float& DeltaTime) const
 		return;
 	
 	//60 Converts minutes to seconds
-	const float ConsumedFuel = DeltaTime / (FuelBurnRate * 60);
+	const float ConsumedFuel = DeltaTime * FuelBurnRate / 60.0f;
 	
 	const FGameplayTag MagTag = FGameplayTag::RequestGameplayTag(FName("Data.Magnitude"));
 	if (!MagTag.IsValid())
@@ -421,32 +595,6 @@ void AShipManager::ConsumeFuel(const float& DeltaTime) const
 	
 	SpecHandle.Data.Get()->SetSetByCallerMagnitude(MagTag, -ConsumedFuel);
 	AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-}
-
-/**
- * What happens when the ship succeeds. Currently not implemented.
- */
-void AShipManager::Success()
-{
-	if (bIsLaunching)
-	{
-		//Launch Complete
-		
-	} 
-	else if (bIsFlying)
-	{
-		//Game Win
-		
-	}
-}
-
-/**
- * What happens when the ship fails. Currently not implemented.
- */
-void AShipManager::Failure()
-{
-	UE_LOG(LogTemp, Display, TEXT("ShipManager::Failure - Game Lost"));
-	
 }
 
 /**
@@ -554,6 +702,15 @@ void AShipManager::UpdateStatus()
 	if (!CheckAttributeStatus())
 	{
 		bWarning = true;
+	}
+	
+	if (bIsFlying)
+	{
+		if (const UEndStateSubsystem* Subsystem = GetWorld()->GetSubsystem<UEndStateSubsystem>(); Subsystem->
+			CheckIsInFailState(EFailState::Explosion) || Subsystem->CheckIsInFailState(EFailState::NoFuel))
+		{
+			bFail = true;
+		}
 	}
 	
 	//Update status hierarchically

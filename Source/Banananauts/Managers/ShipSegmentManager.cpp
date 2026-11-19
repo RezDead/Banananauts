@@ -21,10 +21,89 @@ TArray<AActor*> AShipSegmentManager::GetAttachedItems() const
 	return Ret;
 }
 
-void AShipSegmentManager::OnSaveGame_Implementation(USaveData* SaveGameObject)
+void AShipSegmentManager::OnSaveGame_Implementation(USaveData* SaveGameObject, const ESaveType SaveEvent)
 {
-	ISaveable::OnSaveGame_Implementation(SaveGameObject);
+	ISaveable::OnSaveGame_Implementation(SaveGameObject, SaveEvent);
 
+	switch (SaveEvent) {
+	case ESaveType::Flight:
+		OnFlightSaveEvent(SaveGameObject);
+		break;
+	case ESaveType::Fail:
+		OnFailSaveEvent(SaveGameObject);
+		break;
+	default:;
+	}
+
+}
+
+void AShipSegmentManager::OnLoadGame_Implementation(USaveData* SaveGameObject, ESaveType LoadEvent)
+{
+	ISaveable::OnLoadGame_Implementation(SaveGameObject, LoadEvent);
+		
+	if (LoadEvent != ESaveType::Flight) return;
+	if (!SaveGameObject->ShipItems.Contains(SegmentType)) return;
+
+	TArray<FItemSaveInfo> ItemSaveInfo = SaveGameObject->ShipItems[SegmentType].SectionItems;
+	
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	for (auto Item : ItemSaveInfo)
+	{
+		UClass* ItemClass = Item.ItemType.LoadSynchronous();
+		if (!ItemClass)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to load item class for spawning."));
+			continue;
+		}
+		
+		const FTransform SpawnTransform = Item.RelativeTransform * GetActorTransform();
+
+		AActor* SpawnedItem = GetWorld()->SpawnActor(ItemClass, &SpawnTransform, SpawnParams);
+		if (SpawnedItem)
+		{
+			Execute_AttachItem(this, SpawnedItem);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to spawn item type: %s, on flight begin"), *ItemClass->GetName());
+		}
+	}
+}
+
+void AShipSegmentManager::BeginPlay()
+{
+	Super::BeginPlay();
+		
+	ShipRef = GetParentActor();
+	
+	if (!ShipRef)
+		UE_LOG(LogTemp, Error, TEXT("ShipSegmentManager::BeginPlay - ShipRef is null, how did we get here?"));
+	
+	
+	if (AbilitySystemComponent)
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	
+	InitAttributes();
+	
+	SetupAttributeListeners();
+	
+	Execute_RegisterToSaveSubsystem(this);
+}
+
+void AShipSegmentManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+		
+	Execute_UnregisterFromSaveSubsystem(this);
+}
+
+/**
+ * What happens on a flight save event.
+ */
+void AShipSegmentManager::OnFlightSaveEvent(USaveData* SaveGameObject) const
+{
 	TArray<AActor*> AttachedItems = GetAttachedItems();
 	TArray<FItemSaveInfo> ItemSaveInfo;
 
@@ -48,67 +127,44 @@ void AShipSegmentManager::OnSaveGame_Implementation(USaveData* SaveGameObject)
 	SaveGameObject->ShipItems.Add(SegmentType, Wrapper);
 }
 
-void AShipSegmentManager::OnLoadGame_Implementation(USaveData* SaveGameObject)
+/**
+ * What happens on a fail save event.
+ */
+void AShipSegmentManager::OnFailSaveEvent(USaveData* SaveGameObject) const
 {
-	ISaveable::OnLoadGame_Implementation(SaveGameObject);
-
-	if (!SaveGameObject->ShipItems.Contains(SegmentType)) return;
-
-	TArray<FItemSaveInfo> ItemSaveInfo = SaveGameObject->ShipItems[SegmentType].SectionItems;
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-	for (auto Item : ItemSaveInfo)
+	TArray<AActor*> AttachedItems = GetAttachedItems();
+	auto& FailItems = SaveGameObject->FailItems;
+	
+	for (const auto Item : AttachedItems)
 	{
-		const FTransform SpawnTransform = Item.RelativeTransform * GetActorTransform();
-
-		AActor* SpawnedItem = GetWorld()->SpawnActor(Item.ItemType.Get(), &SpawnTransform, SpawnParams);
-		Execute_AttachItem(this, SpawnedItem);
+		int& ItemNum = FailItems.FindOrAdd(Item->GetClass());
+		ItemNum++;
 	}
 }
 
-void AShipSegmentManager::BeginPlay()
+void AShipSegmentManager::RegisterToSaveSubsystem_Implementation()
 {
-	Super::BeginPlay();
-	
-	ShipRef = GetParentActor();
-	
-	if (!ShipRef)
-		UE_LOG(LogTemp, Error, TEXT("ShipSegmentManager::BeginPlay - ShipRef is null, how did we get here?"));
-	
-	
-	if (AbilitySystemComponent)
-		AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	
-	InitAttributes();
-	
-	SetupAttributeListeners();
-	
-	Execute_InitSaveSubsystem(this);
-}
-
-void AShipSegmentManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-	
-	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
-	{
-		Subsystem->UnregisterSaveable(this);
-	}
-}
-
-void AShipSegmentManager::InitSaveSubsystem_Implementation()
-{
-	ISaveable::InitSaveSubsystem_Implementation();
+	ISaveable::RegisterToSaveSubsystem_Implementation();
 	
 	if (USaveSubsystem* SaveSubsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
 	{
-		SaveSubsystem->RegisterSaveable(this);
+		SaveSubsystem->RegisterSaveable(this, ESaveType::Flight);
+		SaveSubsystem->RegisterSaveable(this, ESaveType::Fail);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("ShipSegmentManager::InitSaveSubsystem - SaveSubsystem is null, how did we get here?"));
+	}
+}
+
+void AShipSegmentManager::UnregisterFromSaveSubsystem_Implementation()
+{
+	ISaveable::UnregisterFromSaveSubsystem_Implementation();
+	
+	if (USaveSubsystem* Subsystem = GetGameInstance()->GetSubsystem<USaveSubsystem>())
+	{
+		Subsystem->UnregisterSaveable(this, ESaveType::Flight);
+		Subsystem->UnregisterSaveable(this, ESaveType::Fail);
 	}
 }
 
